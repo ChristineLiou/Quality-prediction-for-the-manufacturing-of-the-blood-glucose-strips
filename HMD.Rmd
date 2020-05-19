@@ -1,0 +1,141 @@
+---
+title: "Quality prediction for the manufacturing of the blood glucose strips"
+output: html_document
+---
+> Outline
+
+1. Abstract 
+2. Knowing the data
+2.1  
+
+3. Analysis 
+3.1 IPQC
+3.2 All of the data
+
+
+# 1. Abstract
+#### Machine learning models to predict the quality of manufacturing of blood glucose test strips are presented in this study. A variety of models are built by inspection data from an anonymous manufacturer in Taiwan. The aim of this study is to predict the quality of the strips in advance and to reduce the cost of defective products before shipment.
+#### The proposed approach is divided into two parts. In-Process Quality Control (IPQC) data are examined in the first part. Since the data of defective products are relatively rare, we should make the data more balanced before building a model. Synthetic Minority Over-Sampling Technique (SMOTE) and Random Over-sampling Example (ROSE) are used to balance the data, and subsequently classification models are developed by the decision tree and random forest. Evaluation results from Receiver Operating Characteristic Curve (ROC) show that the decision tree and random forest after SMOTE have better performance than the counterpart of ROSE model.
+#### After exploring the IPQC data, the second part of this study combines different inspection results of blood glucose test strips under same batch of raw materials. Standard deviation filtering and Principal Component Analysis (PCA) are used to select or extract appropriate features before building the models. Different clusterings from K-means, hierarchical, and K-medoids methods are employed to facilitate the understanding on quality grading for blood glucose test strips. Different clusterings are externally validated against original category labels. Results show that performance of more than three groups degrades significantly regardless of the cluster methods.
+
+#### The process of this study as below.  
+```{r setup, include=FALSE}
+knitr::include_graphics("G:/我的雲端硬碟/HMD碩論/graph/Analysis process.jpg")
+
+
+```
+
+#2. Knowing the data
+#### The below data is original excel inputting from the company. It is quiet massy, so we need to extract, transform and reorganized. 
+```{r}
+library(xlsx)
+IPQC_2233_GCS <- read.xlsx("~/HMD/data-20180426/IPQC/C4H82233-IPQC.xls",encoding="UTF-8",startRow =10,endRow = 23,sheetIndex = 1 )
+IPQC_2233_GCS
+```
+
+
+```{r}
+library(reshape2)
+IPQC_2233_GCS <- IPQC_2233_GCS[,1:9]
+lookup <- IPQC_2233_GCS[1:3,]
+lookup <- sapply(lookup,as.character)
+lookup <- rbind(colnames(lookup),lookup)
+colnames(lookup) <- NULL
+lookup <- t(lookup)
+lookup <- as.data.frame(lookup)
+colnames(lookup) <- c("Level", "GCS","Row","Meter")
+lookup <- lookup [-1,]
+lapply(lookup, table, useNA = "ifany")
+lookup$Level <- factor(lookup$Level)
+lookup$Meter <- factor(lookup$Meter)
+lookup$Row <- factor(lookup$Row)
+
+IPQC_2233_GCS <- IPQC_2233_GCS[-(1:3),]
+colnames(IPQC_2233_GCS)[1] <- "obs"
+
+lIPQC_2233_GCS <- melt(IPQC_2233_GCS,id.vars = "obs", measure.vars = colnames(IPQC_2233_GCS)[-1],variable.name = "Level",value.name = "bg")
+lIPQC_2233_GCS <- merge(lookup,lIPQC_2233_GCS,by="Level")
+lIPQC_2233_GCS$Level <- ifelse(lIPQC_2233_GCS$Level == "Level.1" | lIPQC_2233_GCS$Level == "Level.1.1" | lIPQC_2233_GCS$Level == "Level.1.2"| lIPQC_2233_GCS$Level == "Level.1.3", "I", ifelse(lIPQC_2233_GCS$Level == "Level.2" | lIPQC_2233_GCS$Level == "Level.2.1" | lIPQC_2233_GCS$Level == "Level.2.2"| lIPQC_2233_GCS$Level =="Level.2.3", "II", lIPQC_2233_GCS$Level))
+lIPQC_2233_GCS$bg <- as.numeric(lIPQC_2233_GCS$bg)
+lIPQC_2233_GCS$Row <- as.character(lIPQC_2233_GCS$Row)
+
+lIPQC_2233_GCS
+```
+
+
+
+```{r}
+lIPQC_2233_GCS$ave_bg <- ave(lIPQC_2233_GCS$bg, list(lIPQC_2233_GCS$Row,lIPQC_2233_GCS$Level), FUN = function(x) mean(x, na.rm = TRUE))
+lIPQC_2233_GCS$ave_rdiff <- lIPQC_2233_GCS$bg - lIPQC_2233_GCS$ave_bg
+lIPQC_2233_GCS$ave_rdiffpc <- (lIPQC_2233_GCS$ave_rdiff/lIPQC_2233_GCS$ave_bg)*100
+head(lIPQC_2233_GCS)
+```
+
+
+```{r}
+load("~/HMD/RDATA/IPQC_all.RData")
+head(IPQC)
+```
+
+```{r}
+library(dplyr)
+IPQC_PASS <- filter(IPQC, IPQC$passornot=="pass")
+IPQC_NG <- filter(IPQC, IPQC$passornot=="NG")
+a <- which(IPQC_PASS$ave_rdiffpc %in% boxplot.stats(IPQC_PASS$ave_rdiffpc)$out)
+IPQC_PASS <- IPQC_PASS[-a,]
+IPQC <- rbind(IPQC_PASS,IPQC_NG)
+
+
+p_naout <- ggplot(IPQC, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
+p_naout+ ggtitle("Boxplot IPQC before balance_remove pass outlier")
+```
+
+
+```{r}
+library(DMwR)
+set.seed(1111)
+table(IPQC$passornot)
+```
+
+
+```{r}
+IPQC_SMOTE <- SMOTE(passornot ~ ., IPQC, perc.over = 1150,perc.under=150)
+table(IPQC_SMOTE$passornot)
+```
+
+
+```{r}
+smote <- ggplot(IPQC_SMOTE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
+smote + ggtitle("Boxplot IPQC after SMOTE")
+```
+
+```{r}
+library(ROSE)
+set.seed(111)
+IPQC_ROSE <- ROSE(passornot~., data=IPQC,N=nrow(IPQC), p=0.5, seed=1, hmult.majo = 0.25, hmult.mino = 0.5)$data            
+table(IPQC_ROSE$passornot)
+```
+
+```{r}
+rose <- ggplot(IPQC_ROSE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
+rose+ ggtitle("Boxplot IPQC after ROSE")
+```
+
+
+```{r}
+np <- ceiling(0.1*nrow(IPQC_SMOTE))
+test <- sample(1:nrow(IPQC_SMOTE),np)
+IPQC_test <- IPQC_SMOTE[test,]
+IPQC_train <- IPQC_SMOTE[-test,]
+```
+
+```{r}
+library(rpart)
+IPQC_tree <- rpart(passornot ~   Row+obs + ave_rdiffpc, 
+                   data = IPQC_train,
+                   method = "class")  
+IPQC_tree
+```
+
+
+

@@ -369,43 +369,33 @@ summary {
 <blockquote>
 <p>Outline</p>
 </blockquote>
-<div id="abstract" class="section level3">
-<h3>1. Abstract</h3>
-</div>
-<div id="ipqc-data-analysis-part-1" class="section level3">
-<h3>2. IPQC data analysis (Part 1)</h3>
-<div id="knowing-the-data" class="section level4">
-<h4>2.1 Knowing the data</h4>
-<div id="original-data" class="section level5">
-<h5>2.1.1 Original data</h5>
-</div>
-<div id="data-after-etl" class="section level5">
-<h5>2.2.2 Data after ETL</h5>
-</div>
-</div>
-<div id="analysis" class="section level4">
-<h4>2.2 Analysis</h4>
-<div id="smote-decision-tree" class="section level5">
-<h5>2.2.1 SMOTE + Decision Tree</h5>
-</div>
-<div id="smote-random-forest" class="section level5">
-<h5>2.2.2 SMOTE + Random Forest</h5>
-</div>
-<div id="rose-decision-tree" class="section level5">
-<h5>2.2.3 ROSE + Decision Tree</h5>
-</div>
-<div id="rose-random-forest" class="section level5">
-<h5>2.2.4 ROSE + Random Forest</h5>
-</div>
-</div>
-<div id="compare-roc-curve" class="section level4">
-<h4>2.3 Compare ROC curve</h4>
-</div>
-</div>
-<div id="ipqc-fqc-data-analysis-part-2" class="section level3">
-<h3>3. IPQC + FQC data analysis (Part 2)</h3>
-</div>
-<div id="abstract-1" class="section level1">
+<ul>
+<li><ol style="list-style-type: decimal">
+<li>Abstract</li>
+</ol></li>
+<li><ol start="2" style="list-style-type: decimal">
+<li>IPQC data analysis (Part 1)</li>
+</ol>
+<ul>
+<li>2.1 Knowing the data
+<ul>
+<li>2.1.1 Original data</li>
+<li>2.2.2 Data after ETL</li>
+</ul></li>
+<li>2.2 Analysis
+<ul>
+<li>2.2.1 SMOTE + Decision Tree</li>
+<li>2.2.2 SMOTE + Random Forest</li>
+<li>2.2.3 ROSE + Decision Tree</li>
+<li>2.2.4 ROSE + Random Forest</li>
+</ul></li>
+<li>2.3 Compare ROC curve</li>
+</ul></li>
+<li><ol start="3" style="list-style-type: decimal">
+<li>IPQC + FQC data analysis (Part 2)</li>
+</ol></li>
+</ul>
+<div id="abstract" class="section level1">
 <h1>1. Abstract</h1>
 <div id="machine-learning-models-to-predict-the-quality-of-manufacturing-of-blood-glucose-test-strips-are-presented-in-this-study.-a-variety-of-models-are-built-by-inspection-data-from-an-anonymous-manufacturer-in-taiwan.-the-aim-of-this-study-is-to-predict-the-quality-of-the-strips-in-advance-and-to-reduce-the-cost-of-defective-products-before-shipment." class="section level4">
 <h4>Machine learning models to predict the quality of manufacturing of blood glucose test strips are presented in this study. A variety of models are built by inspection data from an anonymous manufacturer in Taiwan. The aim of this study is to predict the quality of the strips in advance and to reduce the cost of defective products before shipment.</h4>
@@ -524,7 +514,7 @@ head(lIPQC_2233_GCS)</code></pre>
 ## 5     I GCS31   3    02 5(左吸) 42   40.9       1.1   2.6894866
 ## 6     I GCS31   3    02 6(右吸) 41   40.9       0.1   0.2444988</code></pre>
 </div>
-<div id="data-after-etl-1" class="section level3">
+<div id="data-after-etl" class="section level3">
 <h3>2.1.2 Data after ETL</h3>
 <pre class="r"><code>load(&quot;~/HMD/RDATA/IPQC_all.RData&quot;)
 head(IPQC)</code></pre>
@@ -570,9 +560,9 @@ table(IPQC$passornot)</code></pre>
 ## pass   NG 
 ## 3993  160</code></pre>
 </div>
-<div id="analysis-1" class="section level2">
+<div id="analysis" class="section level2">
 <h2>2.2 Analysis</h2>
-<div id="smote-decision-tree-1" class="section level3">
+<div id="smote-decision-tree" class="section level3">
 <h3>2.2.1 SMOTE + Decision Tree</h3>
 <pre class="r"><code>IPQC_SMOTE &lt;- SMOTE(passornot ~ ., IPQC, perc.over = 1150,perc.under=150)
 table(IPQC_SMOTE$passornot)</code></pre>
@@ -743,7 +733,7 @@ modelroc_Stree &lt;- roc(IPQC_test$passornot,test_prob[,&quot;NG&quot;]) # &quot
 <pre><code>## Setting levels: control = pass, case = NG</code></pre>
 <pre><code>## Setting direction: controls &lt; cases</code></pre>
 </div>
-<div id="smote-random-forest-1" class="section level3">
+<div id="smote-random-forest" class="section level3">
 <h3>2.2.2 SMOTE + Random Forest</h3>
 <pre class="r"><code>### 建隨機森林
 library(randomForest)</code></pre>
@@ -861,7 +851,7 @@ rfImp</code></pre>
 ## Row6             7.269
 ## Row4             5.942</code></pre>
 </div>
-<div id="rose-decision-tree-1" class="section level3">
+<div id="rose-decision-tree" class="section level3">
 <h3>2.2.3 ROSE + Decision Tree</h3>
 <pre class="r"><code>library(ROSE)</code></pre>
 <pre><code>## Loaded ROSE 0.0-3</code></pre>
@@ -961,7 +951,7 @@ modelroc_Rtree &lt;- roc(IPQC_test$passornot,test_prob[,&quot;NG&quot;]) # &quot
 <pre class="r"><code>plot(modelroc_Rtree, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c(&quot;green&quot;, &quot;red&quot;), max.auc.polygon=TRUE, auc.polygon.col=&quot;skyblue&quot;, print.thres=TRUE)</code></pre>
 <p><img src="data:image/png;base64,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" /><!-- --></p>
 </div>
-<div id="rose-random-forest-1" class="section level3">
+<div id="rose-random-forest" class="section level3">
 <h3>2.2.4 ROSE + Random Forest</h3>
 <pre class="r"><code>#建森林
 library(randomForest)
@@ -1065,7 +1055,7 @@ rfImp</code></pre>
 ## obs5(左吸)       6.779</code></pre>
 </div>
 </div>
-<div id="compare-roc-curve-1" class="section level2">
+<div id="compare-roc-curve" class="section level2">
 <h2>2.3 Compare ROC curve</h2>
 <pre class="r"><code># compared four ROC curve ####
 library(pROC)

@@ -6,18 +6,18 @@ output:
 ---
 > Outline
 
-### 1. Abstract 
-### 2. IPQC data analysis (Part 1)
-#### 2.1 Knowing the data
-#####   2.1.1 Original data
-#####   2.2.2 Data after ETL
-#### 2.2 Analysis 
-#####   2.2.1 SMOTE + Decision Tree
-#####   2.2.2 SMOTE + Random Forest
-#####   2.2.3 ROSE + Decision Tree
-#####   2.2.4 ROSE + Random Forest
-#### 2.3 Compare ROC curve
-### 3. IPQC + FQC data analysis (Part 2)
+* 1. Abstract 
+* 2. IPQC data analysis (Part 1)
+    + 2.1 Knowing the data
+        - 2.1.1 Original data
+        - 2.2.2 Data after ETL
+    + 2.2 Analysis 
+        - 2.2.1 SMOTE + Decision Tree
+        - 2.2.2 SMOTE + Random Forest
+        - 2.2.3 ROSE + Decision Tree
+        - 2.2.4 ROSE + Random Forest
+    + 2.3 Compare ROC curve
+* 3. IPQC + FQC data analysis (Part 2)
 
 
 # 1. Abstract

@@ -1,16 +1,23 @@
 ---
 title: "Quality prediction for the manufacturing of the blood glucose strips"
-output: html_document
+output:
+  html_document:
+    keep_md: true
 ---
 > Outline
 
-1. Abstract 
-2. Knowing the data
-2.1  
-
-3. Analysis 
-3.1 IPQC
-3.2 All of the data
+### 1. Abstract 
+### 2. IPQC data analysis (Part 1)
+#### 2.1 Knowing the data
+#####   2.1.1 Original data
+#####   2.2.2 Data after ETL
+#### 2.2 Analysis 
+#####   2.2.1 SMOTE + Decision Tree
+#####   2.2.2 SMOTE + Random Forest
+#####   2.2.3 ROSE + Decision Tree
+#####   2.2.4 ROSE + Random Forest
+#### 2.3 Compare ROC curve
+### 3. IPQC + FQC data analysis (Part 2)
 
 
 # 1. Abstract
@@ -19,13 +26,12 @@ output: html_document
 #### After exploring the IPQC data, the second part of this study combines different inspection results of blood glucose test strips under same batch of raw materials. Standard deviation filtering and Principal Component Analysis (PCA) are used to select or extract appropriate features before building the models. Different clusterings from K-means, hierarchical, and K-medoids methods are employed to facilitate the understanding on quality grading for blood glucose test strips. Different clusterings are externally validated against original category labels. Results show that performance of more than three groups degrades significantly regardless of the cluster methods.
 
 #### The process of this study as below.  
-```{r setup, include=FALSE}
-knitr::include_graphics("G:/我的雲端硬碟/HMD碩論/graph/Analysis process.jpg")
-
-
+```{r}
+knitr::include_graphics("C:/Users/Christine Liou/Documents/Quality-prediction-for-the-manufacturing-of-the-blood-glucose-strips/Analysis process.jpg")
 ```
-
-#2. Knowing the data
+# 2. IPQC data analysis (Part 1)
+## 2.1 Knowing the data
+### 2.1.1 Original data
 #### The below data is original excel inputting from the company. It is quiet massy, so we need to extract, transform and reorganized. 
 ```{r}
 library(xlsx)
@@ -59,18 +65,14 @@ lIPQC_2233_GCS$Level <- ifelse(lIPQC_2233_GCS$Level == "Level.1" | lIPQC_2233_GC
 lIPQC_2233_GCS$bg <- as.numeric(lIPQC_2233_GCS$bg)
 lIPQC_2233_GCS$Row <- as.character(lIPQC_2233_GCS$Row)
 
-lIPQC_2233_GCS
-```
-
-
-
-```{r}
 lIPQC_2233_GCS$ave_bg <- ave(lIPQC_2233_GCS$bg, list(lIPQC_2233_GCS$Row,lIPQC_2233_GCS$Level), FUN = function(x) mean(x, na.rm = TRUE))
 lIPQC_2233_GCS$ave_rdiff <- lIPQC_2233_GCS$bg - lIPQC_2233_GCS$ave_bg
 lIPQC_2233_GCS$ave_rdiffpc <- (lIPQC_2233_GCS$ave_rdiff/lIPQC_2233_GCS$ave_bg)*100
 head(lIPQC_2233_GCS)
+
 ```
 
+### 2.1.2 Data after ETL
 
 ```{r}
 load("~/HMD/RDATA/IPQC_all.RData")
@@ -85,7 +87,7 @@ a <- which(IPQC_PASS$ave_rdiffpc %in% boxplot.stats(IPQC_PASS$ave_rdiffpc)$out)
 IPQC_PASS <- IPQC_PASS[-a,]
 IPQC <- rbind(IPQC_PASS,IPQC_NG)
 
-
+library(ggplot2)
 p_naout <- ggplot(IPQC, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
 p_naout+ ggtitle("Boxplot IPQC before balance_remove pass outlier")
 ```
@@ -97,6 +99,8 @@ set.seed(1111)
 table(IPQC$passornot)
 ```
 
+## 2.2 Analysis
+### 2.2.1 SMOTE + Decision Tree
 
 ```{r}
 IPQC_SMOTE <- SMOTE(passornot ~ ., IPQC, perc.over = 1150,perc.under=150)
@@ -109,24 +113,17 @@ smote <- ggplot(IPQC_SMOTE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(a
 smote + ggtitle("Boxplot IPQC after SMOTE")
 ```
 
-```{r}
-library(ROSE)
-set.seed(111)
-IPQC_ROSE <- ROSE(passornot~., data=IPQC,N=nrow(IPQC), p=0.5, seed=1, hmult.majo = 0.25, hmult.mino = 0.5)$data            
-table(IPQC_ROSE$passornot)
-```
 
 ```{r}
-rose <- ggplot(IPQC_ROSE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
-rose+ ggtitle("Boxplot IPQC after ROSE")
-```
 
-
-```{r}
+### 資料切分
 np <- ceiling(0.1*nrow(IPQC_SMOTE))
 test <- sample(1:nrow(IPQC_SMOTE),np)
 IPQC_test <- IPQC_SMOTE[test,]
 IPQC_train <- IPQC_SMOTE[-test,]
+
+table(IPQC_train$passornot)/nrow(IPQC_train)
+table(IPQC_test$passornot)/nrow(IPQC_test)
 ```
 
 ```{r}
@@ -138,4 +135,305 @@ IPQC_tree
 ```
 
 
+```{r}
+### 剪枝
+printcp(IPQC_tree)
+plotcp(IPQC_tree)
+
+#取最小錯誤率剪枝
+prunetree_IPQC <- prune(IPQC_tree, cp = IPQC_tree$cptable[which.min(IPQC_tree$cptable[,"xerror"]),"CP"])
+
+#取最小錯誤率加上一倍標準誤
+opt <- which.min(IPQC_tree$cptable[,"xerror"])
+oneSe <- which(IPQC_tree$cptable[, "rel error"] < 
+                IPQC_tree$cptable[opt,"xerror"] + IPQC_tree$cptable[opt, "xstd"])[1]
+
+cpOneSe <- IPQC_tree$cptable[oneSe, "CP"]
+IPQC_pruneOneSe <- prune(IPQC_tree, cp = cpOneSe)
+
+knitr::kable(
+  IPQC_tree$cptable, caption = ' 分類樹複雜度參數表',
+  booktabs = TRUE
+)
+
+```
+
+```{r}
+### 畫圖
+library(rpart.plot)
+#opar<-par(no.readonly = T)
+#par(mfrow=c(1,2))
+rpart.plot(IPQC_tree, digits = 3, cex=0.8, sub="剪枝前")
+rpart.plot(prunetree_IPQC, digits = 3, cex=0.8, sub="剪枝後")
+rpart.plot(IPQC_pruneOneSe, digits = 3, cex=0.8, sub="onese剪枝後")
+#剪枝前後差不多，因為cp最小取0.01，而原本rpart預設值就是0.01所以沒啥差
+```
+
+```{r}
+#訓練集
+passornot_train <- IPQC_SMOTE$passornot[-test]
+train_prob <- predict(IPQC_tree,IPQC_train, type = "prob")
+train_label <- predict(IPQC_tree,IPQC_train, type = "class")
+
+table_train <- table(passornot_train,train_label)
+correct_train <- sum(diag(table_train))/sum(table_train)*100
+correct_train #69.56699
+
+sensitivity <- table_train[2,2]/sum(table_train[2,])*100
+sensitivity # 69.99227
+```
+
+```{r}
+#測試集
+passornot_test <- IPQC_SMOTE$passornot[test]
+test_prob <- predict(IPQC_tree,IPQC_test, type = "prob")
+test_label <- predict(IPQC_tree,IPQC_test, type = "class")
+table_test <- table(passornot_test,test_label)
+# data.frame(test_prob, test_label)
+correct_test <- sum(diag(table_test))/sum(table_test)*100
+correct_test #訓練集資料正確率 63.23529 %  
+
+sensitivity <- table_test[2,2]/sum(table_test[2,])*100
+sensitivity #測試集的sensitivity 65.98639%
+```
+
+```{r}
+### ROC curve
+library(pROC)
+levels(IPQC_test$passornot)
+head(IPQC_test$passornot)
+str(IPQC_test$passornot) # "pass": 1, "NG":2
+
+modelroc_Stree <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
+
+plot(modelroc_Stree, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c("green", "red"), max.auc.polygon=TRUE, auc.polygon.col="skyblue", print.thres=TRUE)
+```
+
+```{r}
+library(pROC)
+modelroc_Stree <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
+```
+
+### 2.2.2 SMOTE + Random Forest
+
+```{r}
+### 建隨機森林
+library(randomForest)
+#set.seed(1117)
+rf <- randomForest(passornot ~ Row + obs + ave_rdiffpc, data = IPQC_train, ntree = 100)
+rf
+
+plot(rf)
+```
+
+```{r}
+### 變數重要性
+importance(rf) 
+varImpPlot(rf)
+```
+
+```{r}
+### CV調mtry
+library(caret)
+#set.seed(100)
+mtryGrid <- data.frame(mtry = floor(seq(1, ncol(IPQC_train), length = 10)))
+rfTune <- train(passornot ~ Row + obs + ave_rdiffpc, 
+                data = IPQC_train,
+                method = "rf",
+                tuneGrid = mtryGrid,
+                ntree = 100,
+                importance = TRUE,
+                trControl = trainControl(method = "cv",number = 10))
+rfTune
+plot(rfTune)
+```
+
+```{r}
+
+passornot_test <- IPQC_SMOTE$passornot[test]
+test_prob <- predict(rfTune,IPQC_test, type = "prob")
+test_label <- predict(rfTune,IPQC_test, type = "raw")
+table_test <- table(passornot_test,test_label)
+
+correct_test <- sum(diag(table_test))/sum(table_test)*100
+correct_test #測試集資料正確率 69.48529 %  
+
+sensitivity <- table_test[2,2]/sum(table_test[2,])*100
+sensitivity #測試集的sensitivity 75.1634%
+
+### ROC
+library(pROC)
+modelroc_Srf <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
+
+plot(modelroc_Srf, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c("green", "red"), max.auc.polygon=TRUE, auc.polygon.col="skyblue", print.thres=TRUE)
+
+```
+
+```{r}
+### 變數重要性
+rfImp <- varImp(rfTune, scale = FALSE)
+rfImp
+```
+
+
+### 2.2.3 ROSE + Decision Tree
+
+```{r}
+library(ROSE)
+set.seed(111)
+IPQC_ROSE <- ROSE(passornot~., data=IPQC,N=nrow(IPQC), p=0.5, seed=1, hmult.majo = 0.25, hmult.mino = 0.5)$data            
+#ROSE函數包的人工合成數據(ROSE)、過採樣、欠採樣及融合過採樣和欠採樣，根據Nicola文章，ROSE的ROCcurve 表現優於其他三者，所以採用ROSE套件中的ROSE函數進行數據平衡
+
+table(IPQC_ROSE$passornot)
+
+rose <- ggplot(IPQC_ROSE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
+rose+ ggtitle("Boxplot IPQC after ROSE")
+
+ggplot(IPQC_ROSE, aes(x=Row, y=ave_rdiffpc))+ geom_boxplot(outlier.size = 1.5, outlier.shape = 21) + scale_x_discrete(limits=c("1","2","3","4","5","6")) + ggtitle("boxplot IPQC(Row)") + facet_wrap(~passornot)
+```
+
+```{r}
+### 資料切分
+np <- ceiling(0.1*nrow(IPQC_ROSE))
+test <- sample(1:nrow(IPQC_ROSE),np)
+IPQC_test <- IPQC_ROSE[test,]
+IPQC_train <- IPQC_ROSE[-test,]
+
+```
+
+```{r}
+### 建樹
+library(rpart)
+IPQC_tree <- rpart(passornot ~   Row + obs + ave_rdiffpc, method = "class", data = IPQC_train, control = rpart.control(minbucket = 200)) 
+
+### 剪枝
+printcp(IPQC_tree)
+plotcp(IPQC_tree)
+prunetree_IPQC <- prune(IPQC_tree, cp = IPQC_tree$cptable[which.min(IPQC_tree$cptable[,"xerror"]),"CP"])
+
+
+### 畫圖
+library(rpart.plot)
+#opar<-par(no.readonly = T)
+#par(mfrow=c(1,2))
+rpart.plot(IPQC_tree, digits = 3, cex=0.8, sub="剪枝前")
+rpart.plot(prunetree_IPQC, digits = 3, cex=0.8)
+#剪枝前後一樣
+
+rpart.rules(x = IPQC_tree,cover = TRUE)
+```
+
+```{r}
+### 模型評估
+#訓練集
+passornot_train <- IPQC_ROSE$passornot[-test]
+train_prob <- predict(IPQC_tree,IPQC_train, type = "prob")
+train_label <- predict(IPQC_tree,IPQC_train, type = "class")
+
+table_train <- table(passornot_train,train_label)
+correct_train <- sum(diag(table_train))/sum(table_train)*100
+correct_train #69.56699
+
+sensitivity <- table_train[2,2]/sum(table_train[2,])*100
+sensitivity # 69.99227
+```
+
+```{r}
+#測試集的正確率
+passornot_test <- IPQC_ROSE$passornot[test]
+test_prob <- predict(IPQC_tree,IPQC_test, type = "prob")
+test_label <- predict(IPQC_tree,IPQC_test, type = "class")
+table_test <- table(passornot_test,test_label)
+# data.frame(test_prob, test_label)
+
+correct_test <- sum(diag(table_test))/sum(table_test)*100
+correct_test #測試集資料正確率 71.2963 %  
+
+sensitivity <- table_test[2,2]/sum(table_test[2,])*100
+sensitivity #測試集的sensitivity 15.38462 %
+```
+
+```{r}
+# ROC
+library(pROC)
+modelroc_Rtree <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
+
+plot(modelroc_Rtree, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c("green", "red"), max.auc.polygon=TRUE, auc.polygon.col="skyblue", print.thres=TRUE)
+```
+
+### 2.2.4 ROSE + Random Forest
+
+```{r}
+#建森林
+library(randomForest)
+#set.seed(111)
+rf <- randomForest(passornot ~ Row + obs + ave_rdiffpc, data = IPQC_train, ntree = 100)
+rf_predict <- predict(rf, newdata = IPQC_test)
+rf 
+plot(rf)
+```
+
+```{r}
+### CV調mtry
+library(caret)
+#set.seed(100)
+mtryGrid <- data.frame(mtry = floor(seq(1, ncol(IPQC_train), length = 10)))
+rfTune <- train(passornot ~ Row + obs + ave_rdiffpc, 
+                data = IPQC_train,
+                method = "rf",
+                tuneGrid = mtryGrid,
+                ntree = 100,
+                importance = TRUE,
+                trControl = trainControl(method = "cv",number = 10))
+rfTune
+plot(rfTune)
+
+```
+
+```{r}
+### 測試集評估
+
+passornot_test <- IPQC_ROSE$passornot[test]
+test_prob <- predict(rf,IPQC_test, type = "prob")
+test_label <- predict(rfTune,IPQC_test, type = "raw")
+table_test <- table(passornot_test,test_label)
+
+correct_test <- sum(diag(table_test))/sum(table_test)*100
+correct_test #測試集資料正確率 69.48529 %  
+
+sensitivity <- table_test[2,2]/sum(table_test[2,])*100
+sensitivity #測試集的sensitivity 75.1634%
+```
+
+```{r}
+### ROC
+library(pROC)
+modelroc_Rrf <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
+
+plot(modelroc_Rrf, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c("green", "red"), max.auc.polygon=TRUE, auc.polygon.col="skyblue", print.thres=TRUE)
+
+
+### 變數重要性
+rfImp <- varImp(rfTune, scale = FALSE)
+rfImp
+```
+
+## 2.3 Compare ROC curve
+```{r}
+# compared four ROC curve ####
+library(pROC)
+library(ggplot2)
+roc_tree <- ggroc(list(smote_tree=modelroc_Stree,rose_tree=modelroc_Rtree), legacy.axes = TRUE, aes =c("linetype")) + labs(x = "FPR" , y = "TPR")
+roc_tree
+
+roc_rf <- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf),legacy.axes = TRUE,aes =c("linetype", "color")) + labs(x = "FPR" , y = "TPR")
+roc_rf
+
+roc_rf <- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf),legacy.axes = TRUE,aes =c("linetype")) + labs(x = "FPR" , y = "TPR")
+roc_rf
+
+roc <- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf,smote_tree=modelroc_Stree,rose_tree=modelroc_Rtree), legacy.axes = TRUE,aes =c("linetype")) + labs(x = "FPR" , y = "TPR")
+roc
+
+```
 

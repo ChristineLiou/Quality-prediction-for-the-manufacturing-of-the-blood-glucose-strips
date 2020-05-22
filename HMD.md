@@ -6,8 +6,8 @@ output:
 ---
 > Outline
 
-* 1. Abstract 
-* 2. IPQC data analysis (Part 1)
+1. Abstract 
+2. IPQC data analysis (Part 1)
     + 2.1 Knowing the data
         - 2.1.1 Original data
         - 2.2.2 Data after ETL
@@ -17,7 +17,7 @@ output:
         - 2.2.3 ROSE + Decision Tree
         - 2.2.4 ROSE + Random Forest
     + 2.3 Compare ROC curve
-* 3. IPQC + FQC data analysis (Part 2)
+3. IPQC + FQC data analysis (Part 2)
 
 
 # 1. Abstract
@@ -167,6 +167,7 @@ head(lIPQC_2233_GCS)
 ```
 
 ### 2.1.2 Data after ETL
+##### After cleaning, transforming, and calculating, the whole IPQC data is combined. The first column marks the strips pass or not. The two to seven columns are the strip's tags, shows us the pass level, the batch name, the blood sugar rate levels, the row, the estimated meter, and the observed number. The "bg" column is the strip tested outcome. We use the same real blood to test the strip. Therefore, based on the same testing blood, the outcome of the strip should nearly the same. If the "bg" quite different from other strips, that means the strip might be bad quality. 
 
 
 ```r
@@ -191,6 +192,7 @@ head(IPQC)
 ## 6    1.265823
 ```
 
+##### After removing the outlier based on boxplot, the strips with the same Row and obs are drawn a boxplot according to the 'ave_rdiffpc'(averaged of the row difference percentage). As we can see, the boxplots of the pass have more similar average and IQR than NG.
 
 ```r
 library(dplyr)
@@ -216,7 +218,7 @@ library(dplyr)
 ```r
 IPQC_PASS <- filter(IPQC, IPQC$passornot=="pass")
 IPQC_NG <- filter(IPQC, IPQC$passornot=="NG")
-a <- which(IPQC_PASS$ave_rdiffpc %in% boxplot.stats(IPQC_PASS$ave_rdiffpc)$out)
+a <- which(IPQC_PASS$ave_rdiffpc %in% boxplot.stats(IPQC_PASS$ave_rdiffpc)$out) #removed the outlier
 IPQC_PASS <- IPQC_PASS[-a,]
 IPQC <- rbind(IPQC_PASS,IPQC_NG)
 
@@ -227,7 +229,8 @@ p_naout+ ggtitle("Boxplot IPQC before balance_remove pass outlier")
 
 ![](HMD_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
-
+##### The difference between pass and NG might have two reasons. First, the variance of the data should be small result in the pass strips. In other words, because ave_rdiffpc of the strips are quite diverse, the strips are not passed. Therefore, the boxplot in the NG part has different shapes. The other reason might be the number of data. With fewer collected data, the boxplot of NG would be quiet different. 
+#### According to the codes below, we have 3993 pass data and only 160 NG data. 
 
 ```r
 library(DMwR)
@@ -254,7 +257,7 @@ table(IPQC$passornot)
 
 ## 2.2 Analysis
 ### 2.2.1 SMOTE + Decision Tree
-
+##### Our data is imbalanced data. Applying machine learning model with imbalance data often causes the model to develop a bias towards the majority class. Therefore, we should balance the data first and then build the classification model. SMOTE is based on nearest neighbors judged by Euclidean Distance between data points in feature space. It selects examples that are close in the feature space, drawing a line between the examples in the feature space and drawing a new sample at a point along that line.
 
 ```r
 IPQC_SMOTE <- SMOTE(passornot ~ ., IPQC, perc.over = 1150,perc.under=150)
@@ -267,7 +270,7 @@ table(IPQC_SMOTE$passornot)
 ## 2640 1920
 ```
 
-
+##### After SMOTE, as we can see the  NG boxplot at the right side has better performance. The boxplots look quite similar. 
 
 ```r
 smote <- ggplot(IPQC_SMOTE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
@@ -276,7 +279,7 @@ smote + ggtitle("Boxplot IPQC after SMOTE")
 
 ![](HMD_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
-
+##### Separate the data into training set and testing set.
 
 ```r
 ### 資料切分
@@ -304,6 +307,7 @@ table(IPQC_test$passornot)/nrow(IPQC_test)
 ## 0.5942982 0.4057018
 ```
 
+##### Build the decision tree by rpart. 
 
 ```r
 library(rpart)
@@ -328,7 +332,7 @@ IPQC_tree
 ##      7) obs=2(左吸),3(左吸),4(左吸),5(左吸),6(右吸) 1064  302 NG (0.2838346 0.7161654) *
 ```
 
-
+##### Pruning
 
 ```r
 ### 剪枝
@@ -388,6 +392,7 @@ Table:  分類樹複雜度參數表
  0.0233429        1   0.7538905   0.7538905   0.0172056
  0.0100000        3   0.7072046   0.7089337   0.0169158
 
+##### Visualize the result of the tree.
 
 ```r
 ### 畫圖
@@ -415,6 +420,7 @@ rpart.plot(IPQC_pruneOneSe, digits = 3, cex=0.8, sub="onese剪枝後")
 #剪枝前後差不多，因為cp最小取0.01，而原本rpart預設值就是0.01所以沒啥差
 ```
 
+##### Calculate the accuracy and sensitivity of training set.
 
 ```r
 #訓練集
@@ -440,6 +446,7 @@ sensitivity # 69.99227
 ## [1] 49.97118
 ```
 
+##### Calculate the accuracy and sensitivity of testing set. 
 
 ```r
 #測試集
@@ -465,6 +472,7 @@ sensitivity #測試集的sensitivity 65.98639%
 ## [1] 42.16216
 ```
 
+##### Draw the ROC curve.
 
 ```r
 ### ROC curve
@@ -544,7 +552,7 @@ modelroc_Stree <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
 ```
 
 ### 2.2.2 SMOTE + Random Forest
-
+##### Build the random forest model. 
 
 ```r
 ### 建隨機森林
@@ -672,6 +680,7 @@ plot(rfTune)
 
 ![](HMD_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
+#### Calculate the accuracy and sensitivity of testing set.
 
 ```r
 passornot_test <- IPQC_SMOTE$passornot[test]
@@ -696,6 +705,9 @@ sensitivity #測試集的sensitivity 75.1634%
 ## [1] 59.45946
 ```
 
+
+##### Plot the ROC curve. 
+
 ```r
 ### ROC
 library(pROC)
@@ -714,35 +726,7 @@ modelroc_Srf <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
 plot(modelroc_Srf, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c("green", "red"), max.auc.polygon=TRUE, auc.polygon.col="skyblue", print.thres=TRUE)
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-20-1.png)<!-- -->
-
-
-```r
-### 變數重要性
-rfImp <- varImp(rfTune, scale = FALSE)
-rfImp
-```
-
-```
-## rf variable importance
-## 
-##             Importance
-## ave_rdiffpc     48.858
-## Row3            35.208
-## obs6(右吸)      13.205
-## obs8(右吸)      13.181
-## Row5            12.667
-## obs3(左吸)      12.119
-## obs10(右吸)     12.001
-## obs4(左吸)      11.440
-## obs7(右吸)      10.922
-## obs2(左吸)      10.891
-## obs9(右吸)       9.826
-## Row2             9.317
-## obs5(左吸)       7.948
-## Row6             7.269
-## Row4             5.942
-```
+![](HMD_files/figure-html/unnamed-chunk-21-1.png)<!-- -->
 
 
 ### 2.2.3 ROSE + Decision Tree

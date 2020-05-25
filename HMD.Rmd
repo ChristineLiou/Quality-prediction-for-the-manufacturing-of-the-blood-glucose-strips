@@ -239,7 +239,7 @@ plot(rf)
 importance(rf) 
 varImpPlot(rf)
 ```
-
+##### Tuning the mtry 
 ```{r}
 ### CV調mtry
 library(caret)
@@ -256,7 +256,7 @@ rfTune
 plot(rfTune)
 ```
 
-#### Calculate the accuracy and sensitivity of testing set.
+##### Calculate the accuracy and sensitivity of testing set.
 ```{r}
 
 passornot_test <- IPQC_SMOTE$passornot[test]
@@ -283,7 +283,7 @@ plot(modelroc_Srf, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c
 
 
 ### 2.2.3 ROSE + Decision Tree
-
+##### In addition to using SMOTE to balance the data, I also use another method provided in R called ROSE(Random Over-sampling Example). After ROSE, the pass data and NG data have samilar number of data.
 ```{r}
 library(ROSE)
 set.seed(111)
@@ -292,12 +292,15 @@ IPQC_ROSE <- ROSE(passornot~., data=IPQC,N=nrow(IPQC), p=0.5, seed=1, hmult.majo
 
 table(IPQC_ROSE$passornot)
 
-rose <- ggplot(IPQC_ROSE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
-rose+ ggtitle("Boxplot IPQC after ROSE")
-
-ggplot(IPQC_ROSE, aes(x=Row, y=ave_rdiffpc))+ geom_boxplot(outlier.size = 1.5, outlier.shape = 21) + scale_x_discrete(limits=c("1","2","3","4","5","6")) + ggtitle("boxplot IPQC(Row)") + facet_wrap(~passornot)
 ```
 
+##### The boxplot after ROSE as below. 
+```{r}
+rose <- ggplot(IPQC_ROSE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
+rose+ ggtitle("Boxplot IPQC after ROSE")
+```
+
+##### Saperate the data into training and testing set. 
 ```{r}
 ### 資料切分
 np <- ceiling(0.1*nrow(IPQC_ROSE))
@@ -307,6 +310,8 @@ IPQC_train <- IPQC_ROSE[-test,]
 
 ```
 
+
+##### Build the decision tree. 
 ```{r}
 ### 建樹
 library(rpart)
@@ -329,6 +334,8 @@ rpart.plot(prunetree_IPQC, digits = 3, cex=0.8)
 rpart.rules(x = IPQC_tree,cover = TRUE)
 ```
 
+##### Calculate the accuracy and sensitivity of training set.
+
 ```{r}
 ### 模型評估
 #訓練集
@@ -344,6 +351,7 @@ sensitivity <- table_train[2,2]/sum(table_train[2,])*100
 sensitivity # 69.99227
 ```
 
+##### Calculate the accuracy and sensitivity of training set.
 ```{r}
 #測試集的正確率
 passornot_test <- IPQC_ROSE$passornot[test]
@@ -359,6 +367,8 @@ sensitivity <- table_test[2,2]/sum(table_test[2,])*100
 sensitivity #測試集的sensitivity 15.38462 %
 ```
 
+
+##### Draw the ROC curve.
 ```{r}
 # ROC
 library(pROC)
@@ -368,7 +378,7 @@ plot(modelroc_Rtree, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col
 ```
 
 ### 2.2.4 ROSE + Random Forest
-
+##### Build the random forest model.
 ```{r}
 #建森林
 library(randomForest)
@@ -379,6 +389,8 @@ rf
 plot(rf)
 ```
 
+
+##### Tuning the mtry. 
 ```{r}
 ### CV調mtry
 library(caret)
@@ -396,6 +408,7 @@ plot(rfTune)
 
 ```
 
+##### Calculate the accuracy and sensitivity of testing set.
 ```{r}
 ### 測試集評估
 
@@ -411,6 +424,8 @@ sensitivity <- table_test[2,2]/sum(table_test[2,])*100
 sensitivity #測試集的sensitivity 75.1634%
 ```
 
+
+##### Draw ROC curve
 ```{r}
 ### ROC
 library(pROC)

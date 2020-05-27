@@ -10,7 +10,7 @@ output:
 2. IPQC data analysis (Part 1)
     + 2.1 Knowing the data
         - 2.1.1 Original data
-        - 2.2.2 Data after ETL
+        - 2.2.2 Data after preprocessing
     + 2.2 Analysis 
         - 2.2.1 SMOTE + Decision Tree
         - 2.2.2 SMOTE + Random Forest
@@ -21,9 +21,9 @@ output:
 
 
 # 1. Abstract
-#### Machine learning models to predict the quality of manufacturing of blood glucose test strips are presented in this study. A variety of models are built by inspection data from an anonymous manufacturer in Taiwan. The aim of this study is to predict the quality of the strips in advance and to reduce the cost of defective products before shipment.
-#### The proposed approach is divided into two parts. In-Process Quality Control (IPQC) data are examined in the first part. Since the data of defective products are relatively rare, we should make the data more balanced before building a model. Synthetic Minority Over-Sampling Technique (SMOTE) and Random Over-sampling Example (ROSE) are used to balance the data, and subsequently classification models are developed by the decision tree and random forest. Evaluation results from Receiver Operating Characteristic Curve (ROC) show that the decision tree and random forest after SMOTE have better performance than the counterpart of ROSE model.
-#### After exploring the IPQC data, the second part of this study combines different inspection results of blood glucose test strips under same batch of raw materials. Standard deviation filtering and Principal Component Analysis (PCA) are used to select or extract appropriate features before building the models. Different clusterings from K-means, hierarchical, and K-medoids methods are employed to facilitate the understanding on quality grading for blood glucose test strips. Different clusterings are externally validated against original category labels. Results show that performance of more than three groups degrades significantly regardless of the cluster methods.
+Machine learning models to predict the quality of manufacturing of blood glucose test strips are presented in this study. A variety of models are built by inspection data from an anonymous manufacturer in Taiwan. The aim of this study is to predict the quality of the strips in advance and to reduce the cost of defective products before shipment.
+The proposed approach is divided into two parts. In-Process Quality Control (IPQC) data are examined in the first part. Since the data of defective products are relatively rare, we should make the data more balanced before building a model. Synthetic Minority Over-Sampling Technique (SMOTE) and Random Over-sampling Example (ROSE) are used to balance the data, and subsequently classification models are developed by the decision tree and random forest. Evaluation results from Receiver Operating Characteristic Curve (ROC) show that the decision tree and random forest after SMOTE have better performance than the counterpart of ROSE model.
+After exploring the IPQC data, the second part of this study combines different inspection results of blood glucose test strips under same batch of raw materials. Standard deviation filtering and Principal Component Analysis (PCA) are used to select or extract appropriate features before building the models. Different clusterings from K-means, hierarchical, and K-medoids methods are employed to facilitate the understanding on quality grading for blood glucose test strips. Different clusterings are externally validated against original category labels. Results show that performance of more than three groups degrades significantly regardless of the cluster methods.
 
 #### The process of this study as below.  
 
@@ -32,10 +32,11 @@ knitr::include_graphics("C:/Users/Christine Liou/Documents/Quality-prediction-fo
 ```
 
 <img src="C:/Users/Christine Liou/Documents/Quality-prediction-for-the-manufacturing-of-the-blood-glucose-strips/Analysis process.jpg" width="1036" />
+
 # 2. IPQC data analysis (Part 1)
 ## 2.1 Knowing the data
 ### 2.1.1 Original data
-#### The below data is original excel inputting from the company. It is quiet massy, so we need to extract, transform and reorganized. 
+The below data is original excel inputting from the company. It is quiet massy, so we need to extract, transform and reorganized. 
 
 ```r
 library(xlsx)
@@ -137,14 +138,6 @@ IPQC_2233_GCS <- IPQC_2233_GCS[-(1:3),]
 colnames(IPQC_2233_GCS)[1] <- "obs"
 
 lIPQC_2233_GCS <- melt(IPQC_2233_GCS,id.vars = "obs", measure.vars = colnames(IPQC_2233_GCS)[-1],variable.name = "Level",value.name = "bg")
-```
-
-```
-## Warning: attributes are not identical across measure variables; they will
-## be dropped
-```
-
-```r
 lIPQC_2233_GCS <- merge(lookup,lIPQC_2233_GCS,by="Level")
 lIPQC_2233_GCS$Level <- ifelse(lIPQC_2233_GCS$Level == "Level.1" | lIPQC_2233_GCS$Level == "Level.1.1" | lIPQC_2233_GCS$Level == "Level.1.2"| lIPQC_2233_GCS$Level == "Level.1.3", "I", ifelse(lIPQC_2233_GCS$Level == "Level.2" | lIPQC_2233_GCS$Level == "Level.2.1" | lIPQC_2233_GCS$Level == "Level.2.2"| lIPQC_2233_GCS$Level =="Level.2.3", "II", lIPQC_2233_GCS$Level))
 lIPQC_2233_GCS$bg <- as.numeric(lIPQC_2233_GCS$bg)
@@ -166,8 +159,8 @@ head(lIPQC_2233_GCS)
 ## 6     I GCS31   3    02 6(右吸) 41   40.9       0.1   0.2444988
 ```
 
-### 2.1.2 Data after ETL
-##### After cleaning, transforming, and calculating, the whole IPQC data is combined. The first column marks the strips pass or not. The two to seven columns are the strip's tags, shows us the pass level, the batch name, the blood sugar rate levels, the row, the estimated meter, and the observed number. The "bg" column is the strip tested outcome. We use the same real blood to test the strip. Therefore, based on the same testing blood, the outcome of the strip should nearly the same. If the "bg" quite different from other strips, that means the strip might be bad quality. 
+### 2.1.2 Data after preprocessing
+After cleaning, transforming, and calculating, the whole IPQC data is combined. The first column marks the strips pass or not. The two to seven columns are the strip's tags, shows us the pass level, the batch name, the blood sugar rate levels, the row, the estimated meter, and the observed number. The "bg" column is the strip tested outcome. We use the same real blood to test the strip. Therefore, based on the same testing blood, the outcome of the strip should nearly the same. If the "bg" quite different from other strips, that means the strip might be bad quality. 
 
 
 ```r
@@ -192,7 +185,7 @@ head(IPQC)
 ## 6    1.265823
 ```
 
-##### After removing the outlier based on boxplot, the strips with the same Row and obs are drawn a boxplot according to the 'ave_rdiffpc'(averaged of the row difference percentage). As we can see, the boxplots of the pass have more similar average and IQR than NG.
+After removing the outlier based on boxplot, the strips with the same Row and obs are drawn a boxplot according to the 'ave_rdiffpc'(averaged of the row difference percentage). As we can see, the boxplots of the pass have more similar average and IQR than NG.
 
 ```r
 library(dplyr)
@@ -229,8 +222,8 @@ p_naout+ ggtitle("Boxplot IPQC before balance_remove pass outlier")
 
 ![](HMD_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
-##### The difference between pass and NG might have two reasons. First, the variance of the data should be small result in the pass strips. In other words, because ave_rdiffpc of the strips are quite diverse, the strips are not passed. Therefore, the boxplot in the NG part has different shapes. The other reason might be the number of data. With fewer collected data, the boxplot of NG would be quiet different. 
-#### According to the codes below, we have 3993 pass data and only 160 NG data. 
+The difference between pass and NG might have two reasons. First, the variance of the data should be small result in the pass strips. In other words, because ave_rdiffpc of the strips are quite diverse, the strips are not passed. Therefore, the boxplot in the NG part has different shapes. The other reason might be the number of data. With fewer collected data, the boxplot of NG would be quiet different. 
+According to the codes below, we have 3993 pass data and only 160 NG data. 
 
 ```r
 library(DMwR)
@@ -257,7 +250,7 @@ table(IPQC$passornot)
 
 ## 2.2 Analysis
 ### 2.2.1 SMOTE + Decision Tree
-##### Our data is imbalanced data. Applying machine learning model with imbalance data often causes the model to develop a bias towards the majority class. Therefore, we should balance the data first and then build the classification model. SMOTE is based on nearest neighbors judged by Euclidean Distance between data points in feature space. It selects examples that are close in the feature space, drawing a line between the examples in the feature space and drawing a new sample at a point along that line.
+Our data is imbalanced data. Applying machine learning model with imbalance data often causes the model to develop a bias towards the majority class. Therefore, we should balance the data first and then build the classification model. SMOTE is based on nearest neighbors judged by Euclidean Distance between data points in feature space. It selects examples that are close in the feature space, drawing a line between the examples in the feature space and drawing a new sample at a point along that line.
 
 ```r
 IPQC_SMOTE <- SMOTE(passornot ~ ., IPQC, perc.over = 1150,perc.under=150)
@@ -270,7 +263,7 @@ table(IPQC_SMOTE$passornot)
 ## 2640 1920
 ```
 
-##### After SMOTE, as we can see the  NG boxplot at the right side has better performance. The boxplots look quite similar. 
+After SMOTE, as we can see the  NG boxplot at the right side has better performance. The boxplots look quite similar. 
 
 ```r
 smote <- ggplot(IPQC_SMOTE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
@@ -279,7 +272,7 @@ smote + ggtitle("Boxplot IPQC after SMOTE")
 
 ![](HMD_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
-##### Separate the data into training set and testing set.
+Separate the data into training set and testing set.
 
 ```r
 ### 資料切分
@@ -307,7 +300,7 @@ table(IPQC_test$passornot)/nrow(IPQC_test)
 ## 0.5942982 0.4057018
 ```
 
-##### Build the decision tree by rpart. 
+Build the decision tree by rpart. 
 
 ```r
 library(rpart)
@@ -332,7 +325,7 @@ IPQC_tree
 ##      7) obs=2(左吸),3(左吸),4(左吸),5(左吸),6(右吸) 1064  302 NG (0.2838346 0.7161654) *
 ```
 
-##### Pruning
+Pruning
 
 ```r
 ### 剪枝
@@ -392,7 +385,7 @@ Table:  分類樹複雜度參數表
  0.0233429        1   0.7538905   0.7538905   0.0172056
  0.0100000        3   0.7072046   0.7089337   0.0169158
 
-##### Visualize the result of the tree.
+Visualize the result of the tree.
 
 ```r
 ### 畫圖
@@ -420,7 +413,7 @@ rpart.plot(IPQC_pruneOneSe, digits = 3, cex=0.8, sub="onese剪枝後")
 #剪枝前後差不多，因為cp最小取0.01，而原本rpart預設值就是0.01所以沒啥差
 ```
 
-##### Calculate the accuracy and sensitivity of training set.
+Calculate the accuracy and sensitivity of training set.
 
 ```r
 #訓練集
@@ -446,7 +439,7 @@ sensitivity # 69.99227
 ## [1] 49.97118
 ```
 
-##### Calculate the accuracy and sensitivity of testing set. 
+Calculate the accuracy and sensitivity of testing set. 
 
 ```r
 #測試集
@@ -472,7 +465,7 @@ sensitivity #測試集的sensitivity 65.98639%
 ## [1] 42.16216
 ```
 
-##### Draw the ROC curve.
+Draw the ROC curve.
 
 ```r
 ### ROC curve
@@ -552,7 +545,7 @@ modelroc_Stree <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
 ```
 
 ### 2.2.2 SMOTE + Random Forest
-##### Build the random forest model. 
+Build the random forest model. 
 
 ```r
 ### 建隨機森林
@@ -630,6 +623,7 @@ varImpPlot(rf)
 
 ![](HMD_files/figure-html/unnamed-chunk-18-1.png)<!-- -->
 
+Tuning the mtry 
 
 ```r
 ### CV調mtry
@@ -680,7 +674,7 @@ plot(rfTune)
 
 ![](HMD_files/figure-html/unnamed-chunk-19-1.png)<!-- -->
 
-#### Calculate the accuracy and sensitivity of testing set.
+Calculate the accuracy and sensitivity of testing set.
 
 ```r
 passornot_test <- IPQC_SMOTE$passornot[test]
@@ -706,7 +700,7 @@ sensitivity #測試集的sensitivity 75.1634%
 ```
 
 
-##### Plot the ROC curve. 
+Plot the ROC curve. 
 
 ```r
 ### ROC
@@ -730,7 +724,7 @@ plot(modelroc_Srf, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c
 
 
 ### 2.2.3 ROSE + Decision Tree
-
+In addition to using SMOTE to balance the data, I also use another method provided in R called ROSE(Random Over-sampling Example). After ROSE, the pass data and NG data have samilar number of data.
 
 ```r
 library(ROSE)
@@ -754,19 +748,16 @@ table(IPQC_ROSE$passornot)
 ## 2151 2002
 ```
 
+The boxplot after ROSE as below. 
+
 ```r
 rose <- ggplot(IPQC_ROSE, aes(x=obs, y=ave_rdiffpc))+ geom_boxplot() + theme(axis.text.x = element_text(angle = 45))+ facet_grid(Row ~passornot)+ scale_x_discrete(limits= c("1(左吸)","2(左吸)","3(左吸)","4(左吸)","5(左吸)","6(右吸)","7(右吸)","8(右吸)","9(右吸)","10(右吸)")) 
 rose+ ggtitle("Boxplot IPQC after ROSE")
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-22-1.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-23-1.png)<!-- -->
 
-```r
-ggplot(IPQC_ROSE, aes(x=Row, y=ave_rdiffpc))+ geom_boxplot(outlier.size = 1.5, outlier.shape = 21) + scale_x_discrete(limits=c("1","2","3","4","5","6")) + ggtitle("boxplot IPQC(Row)") + facet_wrap(~passornot)
-```
-
-![](HMD_files/figure-html/unnamed-chunk-22-2.png)<!-- -->
-
+Saperate the data into training and testing set. 
 
 ```r
 ### 資料切分
@@ -776,6 +767,8 @@ IPQC_test <- IPQC_ROSE[test,]
 IPQC_train <- IPQC_ROSE[-test,]
 ```
 
+
+Build the decision tree. 
 
 ```r
 ### 建樹
@@ -809,7 +802,7 @@ printcp(IPQC_tree)
 plotcp(IPQC_tree)
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-24-1.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-25-1.png)<!-- -->
 
 ```r
 prunetree_IPQC <- prune(IPQC_tree, cp = IPQC_tree$cptable[which.min(IPQC_tree$cptable[,"xerror"]),"CP"])
@@ -822,13 +815,13 @@ library(rpart.plot)
 rpart.plot(IPQC_tree, digits = 3, cex=0.8, sub="剪枝前")
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-24-2.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-25-2.png)<!-- -->
 
 ```r
 rpart.plot(prunetree_IPQC, digits = 3, cex=0.8)
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-24-3.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-25-3.png)<!-- -->
 
 ```r
 #剪枝前後一樣
@@ -844,6 +837,8 @@ rpart.rules(x = IPQC_tree,cover = TRUE)
 ##       0.65 when ave_rdiffpc >=          2.5                                                                                        16%
 ##       0.77 when ave_rdiffpc <  -3.8                                                                                                 8%
 ```
+
+Calculate the accuracy and sensitivity of training set.
 
 
 ```r
@@ -871,6 +866,7 @@ sensitivity # 69.99227
 ## [1] 46.57763
 ```
 
+Calculate the accuracy and sensitivity of training set.
 
 ```r
 #測試集的正確率
@@ -898,6 +894,8 @@ sensitivity #測試集的sensitivity 15.38462 %
 ```
 
 
+Draw the ROC curve.
+
 ```r
 # ROC
 library(pROC)
@@ -916,10 +914,10 @@ modelroc_Rtree <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
 plot(modelroc_Rtree, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c("green", "red"), max.auc.polygon=TRUE, auc.polygon.col="skyblue", print.thres=TRUE)
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-27-1.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
 
 ### 2.2.4 ROSE + Random Forest
-
+Build the random forest model.
 
 ```r
 #建森林
@@ -949,8 +947,10 @@ rf
 plot(rf)
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-28-1.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
 
+
+Tuning the mtry. 
 
 ```r
 ### CV調mtry
@@ -999,8 +999,9 @@ rfTune
 plot(rfTune)
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-29-1.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-30-1.png)<!-- -->
 
+Calculate the accuracy and sensitivity of testing set.
 
 ```r
 ### 測試集評估
@@ -1028,6 +1029,8 @@ sensitivity #測試集的sensitivity 75.1634%
 ```
 
 
+Draw ROC curve
+
 ```r
 ### ROC
 library(pROC)
@@ -1046,7 +1049,7 @@ modelroc_Rrf <- roc(IPQC_test$passornot,test_prob[,"NG"]) # "pass": 1, "NG":2
 plot(modelroc_Rrf, print.auc=TRUE, auc.polygon=TRUE, grid=c(0.1, 0.2),grid.col=c("green", "red"), max.auc.polygon=TRUE, auc.polygon.col="skyblue", print.thres=TRUE)
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-31-1.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
 
 ```r
 ### 變數重要性
@@ -1085,26 +1088,26 @@ roc_tree <- ggroc(list(smote_tree=modelroc_Stree,rose_tree=modelroc_Rtree), lega
 roc_tree
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-32-1.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-33-1.png)<!-- -->
 
 ```r
 roc_rf <- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf),legacy.axes = TRUE,aes =c("linetype", "color")) + labs(x = "FPR" , y = "TPR")
 roc_rf
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-32-2.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-33-2.png)<!-- -->
 
 ```r
 roc_rf <- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf),legacy.axes = TRUE,aes =c("linetype")) + labs(x = "FPR" , y = "TPR")
 roc_rf
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-32-3.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-33-3.png)<!-- -->
 
 ```r
 roc <- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf,smote_tree=modelroc_Stree,rose_tree=modelroc_Rtree), legacy.axes = TRUE,aes =c("linetype")) + labs(x = "FPR" , y = "TPR")
 roc
 ```
 
-![](HMD_files/figure-html/unnamed-chunk-32-4.png)<!-- -->
+![](HMD_files/figure-html/unnamed-chunk-33-4.png)<!-- -->
 

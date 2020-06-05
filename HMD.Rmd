@@ -18,7 +18,12 @@ output:
         - 2.2.4 ROSE + Random Forest
     + 2.3 Compare ROC curve
 3. IPQC + FQC data analysis (Part 2)
-
+    + 3.1 Filter variables directly by standard deviation
+        - 3.1.1 Clustering without PCA
+        - 3.1.2 PCA + Clustering
+    + 3.2 Fiter variables by standard deviation after grouping dimensions
+        - 3.2.1 Clustering without PCA
+        - 3.2.2 PCA + Clustering
 
 # 1. Abstract
 Machine learning models to predict the quality of manufacturing of blood glucose test strips are presented in this study. A variety of models are built by inspection data from an anonymous manufacturer in Taiwan. The aim of this study is to predict the quality of the strips in advance and to reduce the cost of defective products before shipment.
@@ -29,6 +34,7 @@ After exploring the IPQC data, the second part of this study combines different 
 
 ```{r,warning = FALSE}
 knitr::include_graphics("C:/Users/Christine Liou/Documents/Quality-prediction-for-the-manufacturing-of-the-blood-glucose-strips/Analysis process.jpg")
+
 ```
 
 # 2. IPQC data analysis (Part 1)
@@ -459,5 +465,249 @@ roc_rf
 roc <- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf,smote_tree=modelroc_Stree,rose_tree=modelroc_Rtree), legacy.axes = TRUE,aes =c("linetype")) + labs(x = "FPR" , y = "TPR")
 roc
 
+```
+
+# 3. IPQC + FQC data analysis (Part 2)
+## 3.1 Filter variables directly by standard deviation
+```{r}
+load("~/HMD/RDATA/all_w.RData")
+
+#每一批只留完整的資料 
+all_w$name
+class(all_w$name)
+all_w$name <- as.character(all_w$name)
+all_onetest <- all_w[-(grep("\\.",all_w$name)),]
+
+#只留下pass的23個obs
+all_onetest <- all_onetest[-24,]
+
+
+
+```
+
+```{r}
+#以整體資料來看，直接取sd較高的變數 
+sd <- sapply(all_onetest[-1],sd,na.rm=T)
+(quan <- quantile(sd, probs=seq(0,1,0.05))) #取3 作為sd門檻值
+all_onetest <- rbind(all_onetest,sapply(all_onetest[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+all_onetest[24,1] <- "sd" 
+filter_sd <- all_onetest[,-which(all_onetest[24,]<3)]
+#sort(filter_sd[24,-1])
+
+#col <- sort(all_onetest[24,-1],decreasing = T)[1:20]
+#all_onetest <- all_onetest[,c("name",colnames(col))]
+
+#篩選掉sd小於3的變數後，剩下306個變數
+```
+
+### 3.1.1 Clustering without PCA
+```{r}
+#讀取分類(級)表格
+library(xlsx)
+rank <- read.xlsx("~/HMD/data-20180426/Table_v2.xlsx", encoding="UTF-8", startRow=1, endRow=24, sheetIndex=2)
+rank <- rank[,c(4,7)]
+rank$name <- as.character(rank$name)
+#合併分類表格跟filter_sd (sd那一row不會留下來)
+all_rank <- merge(rank,filter_sd,by="name")
+
+#存篩選後資料框
+#save(all_rank, file = "./RDATA/sd_rank.RData")
+
+#sd篩完後的資料直接以kmeans 分類
+cluster_3 <- kmeans(all_rank[,3:308],3)
+all_rank$cluster_3 <- as.factor(cluster_3$cluster)
+table(cluster_3$cluster,all_rank$New)
+#kmeans跟建立的分類沒有甚麼相似...
+```
+
+### 3.1.2 PCA + Clustering
+```{r}
+#根據306個變數再進行pca 
+pcaObject <- prcomp(all_rank[,3:308], center = TRUE, scale. = TRUE)
+percentVariance <- pcaObject$sd^2/sum(pcaObject$sd^2)*100
+plot(percentVariance, 
+     xlab = "Principal Component",
+     ylab = "Proportion of Variance Explained ", 
+     type = 'b')
+```
+
+```{r}
+#選十個主成分
+cumsum(percentVariance)
+plot(cumsum(percentVariance))
+
+#用caret做並繪圖
+library(caret)
+pp <- preProcess(all_rank[,3:308], method = c("BoxCox","center", "scale", "pca"))
+#PCA needed 10 components to capture 95 percent of the variance
+transformed <- predict(pp, all_rank[,3:308])
+
+
+#畫scatter plot matrix ###
+##根據PCA分出來的前三項屬性跟我根據HMD的三個分類做散佈圖
+PCA <- prcomp(transformed, center = TRUE, scale. = TRUE)
+#根據前十個pca去做kmeans
+pca_3 <- transformed[,1:10]
+pc_kmeans <- kmeans(pca_3,3)
+all_rank$pc_kmeans <- as.factor(pc_kmeans$cluster)
+table(pc_kmeans$cluster,all_rank$New)
+table(pc_kmeans$cluster,all_rank$cluster_3)
+```
+
+## 3.2 Fiter variables by standard deviation after grouping dimensions
+```{r}
+load("~/HMD/RDATA/all_w.RData")
+
+#每一批只留完整的資料 
+all_w$name
+class(all_w$name)
+all_w$name <- as.character(all_w$name)
+all_onetest <- all_w[-(grep("\\.",all_w$name)),]
+
+#只留下pass的23個obs
+all_onetest <- all_onetest[-24,]
+
+#1. column name 開頭IP_G_II +F_G_II
+colnames(all_onetest)
+IP_G_II <- grep("IP_G_II",colnames(all_onetest))
+F_G_II <- grep("F_G_II",colnames(all_onetest))
+G_II <- all_onetest[,c(1,IP_G_II,F_G_II)]
+rm(IP_G_II,F_G_II)
+
+#取sd
+sd <- sapply(G_II[-1],sd,na.rm=T)
+(quan <- quantile(sd, probs=seq(0,1,0.05))) #取8 作為sd門檻值
+G_II <- rbind(G_II,sapply(G_II[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+G_II[24,1] <- "sd" 
+G_II <- G_II[,-which(G_II[24,]<8)]
+sort(G_II[24,-1])  #剩96個變數
+
+#2. column name 開頭IP_b_II +F_b_II
+IP_b_II <- grep("IP_b_II",colnames(all_onetest))
+F_b_II <- grep("F_b_II",colnames(all_onetest))
+b_II <- all_onetest[,c(1,IP_b_II,F_b_II)]
+rm(IP_b_II,F_b_II)
+
+#取sd
+sd <- sapply(b_II[-1],sd,na.rm=T)
+(quan <- quantile(sd, probs=seq(0,1,0.05))) #取22.5 作為sd門檻值
+b_II <- rbind(b_II,sapply(b_II[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+b_II[24,1] <- "sd" 
+b_II <- b_II[,-which(b_II[24,]<22.5)]
+sort(b_II[24,-1])  #剩54個變數
+
+#3. column name 開頭IP_G_I +F_G_I 
+# 若直接grep"IP_G_I"，"IP_G_II"也會被抓到，所以要用以下語法，抓出"IP_G_I"再屏除"IP_G_II"
+IP_G_I <- grep("^(?=.*IP_G_I)(?!.*IP_G_II)", colnames(all_onetest), perl=TRUE)
+F_G_I <- grep("^(?=.*F_G_I)(?!.*F_G_II)", colnames(all_onetest), perl=TRUE)
+G_I <- all_onetest[,c(1,IP_G_I,F_G_I)]
+rm(IP_G_I,F_G_I)
+
+#取sd
+sd <- sapply(G_I[-1],sd,na.rm=T)
+(quan <- quantile(sd, probs=seq(0,1,0.05))) #取1.5 作為sd門檻值
+G_I <- rbind(G_I,sapply(G_I[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+G_I[24,1] <- "sd" 
+G_I <- G_I[,-which(G_I[24,]<1.5)]
+sort(G_I[24,-1])  #剩89個變數
+
+
+#4. column name 開頭IP_b_I +F_b_I
+IP_b_I <- grep("^(?=.*IP_b_I)(?!.*IP_b_II)", colnames(all_onetest), perl=TRUE)
+F_b_I <- grep("^(?=.*F_b_I)(?!.*F_b_II)", colnames(all_onetest), perl=TRUE)
+b_I <- all_onetest[,c(1,IP_b_I,F_b_I)]
+rm(IP_b_I,F_b_I)
+
+#取sd
+sd <- sapply(b_I[-1],sd,na.rm=T)
+(quan <- quantile(sd, probs=seq(0,1,0.05))) #取15.5 作為sd門檻值
+b_I <- rbind(b_I,sapply(b_I[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+b_I[24,1] <- "sd" 
+b_I <- b_I[,-which(b_I[24,]<15.5)]
+sort(G_I[24,-1])  #剩50個變數
+
+filter <- union(colnames(b_I),colnames(b_II))
+filter <- union(filter,colnames(G_I))
+filter <- union(filter,colnames(G_II))
+
+#filter為根據四個group篩選sd 取出的289個變數
+filter <- all_onetest[,filter]
+```
+
+### 3.2.1 Clustering without PCA
+```{r}
+#加入分級標籤，存RData
+library(xlsx)
+rank <- read.xlsx("~/HMD/data-20180426/Table_v2.xlsx", encoding="UTF-8", startRow=1, endRow=24, sheetIndex=2)
+rank <- rank[,c(4,7)]
+rank$name <- as.character(rank$name)
+#合併分類表格跟filter_sd (sd那一row不會留下來)
+all_rank <- merge(rank,filter,by="name")
+# save(all_rank, file = "./RDATA/group_sd_rank.RData")
+
+#sd篩完後的資料直接以kmeans 分類
+cluster_3 <- kmeans(filter[,2:290],3)
+filter$cluster_3 <- as.factor(cluster_3$cluster)
+table(filter$cluster_3,all_rank$New)
+```
+
+### 3.2.2 PCA + Clustering
+```{r}
+#加入分級標籤，存RData
+library(xlsx)
+rank <- read.xlsx("~/HMD/data-20180426/Table_v2.xlsx", encoding="UTF-8", startRow=1, endRow=24, sheetIndex=2)
+rank <- rank[,c(4,7)]
+rank$name <- as.character(rank$name)
+#合併分類表格跟filter_sd (sd那一row不會留下來)
+all_rank <- merge(rank,filter,by="name")
+# save(all_rank, file = "./RDATA/group_sd_rank.RData")
+
+#sd篩完後的資料直接以kmeans 分類
+cluster_3 <- kmeans(filter[,2:290],3)
+filter$cluster_3 <- as.factor(cluster_3$cluster)
+table(filter$cluster_3,all_rank$New)
+
+
+
+#用caret做PCA並繪圖
+library(caret)
+pp <- preProcess(all_rank[,3:291], method = c("BoxCox","center", "scale", "pca"))
+#PCA needed 10 components to capture 95 percent of the variance
+transformed <- predict(pp, all_rank[,3:291])
+
+
+pcaObject <- prcomp(all_rank[,3:291], center = TRUE, scale. = TRUE)
+percentVariance <- pcaObject$sd^2/sum(pcaObject$sd^2)*100
+plot(percentVariance, 
+     xlab = "Principal Component",
+     ylab = "Proportion of Variance Explained ", 
+     type = 'b')
+#選十個主成分
+cumsum(percentVariance)
+plot(cumsum(percentVariance))
+```
+
+```{r}
+#讀取分類(級)表格
+library(xlsx)
+rank <- read.xlsx("~/HMD/data-20180426/Table_v2.xlsx", encoding="UTF-8", startRow=1, endRow=24, sheetIndex=2)
+rankClass <- rank$New
+length(rankClass) #23
+
+panelRange <- extendrange(PCA$x[, 1:3])
+splom(as.data.frame(PCA$x[, 1:3]), # Scatter Plot Matrices in {lattice}
+      groups = rankClass,
+      type = c("p","r"), #r是多加迴歸線
+      as.table = TRUE,
+      auto.key = list(columns = 2),
+      prepanel.limits = function(x) panelRange)
+
+
+#根據前十個pca去做kmeans
+pca <- transformed[,1:10]
+pc_kmeans <- kmeans(pca,3)
+all_rank$pc_kmeans <- as.factor(pc_kmeans$cluster)
+table(pc_kmeans$cluster,all_rank$New)
+table(pc_kmeans$cluster,all_rank$cluster_3)
 ```
 

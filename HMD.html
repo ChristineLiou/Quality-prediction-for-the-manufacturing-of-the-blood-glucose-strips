@@ -387,7 +387,19 @@ summary {
 </ul></li>
 <li>2.3 Compare ROC curve</li>
 </ul></li>
-<li>IPQC + FQC data analysis (Part 2)</li>
+<li>IPQC + FQC data analysis (Part 2)
+<ul>
+<li>3.1 Filter variables directly by standard deviation
+<ul>
+<li>3.1.1 Clustering without PCA</li>
+<li>3.1.2 PCA + Clustering</li>
+</ul></li>
+<li>3.2 Fiter variables by standard deviation after grouping dimensions
+<ul>
+<li>3.2.1 Clustering without PCA</li>
+<li>3.2.2 PCA + Clustering</li>
+</ul></li>
+</ul></li>
 </ol>
 <div id="abstract" class="section level1">
 <h1>1. Abstract</h1>
@@ -1070,6 +1082,506 @@ roc_rf</code></pre>
 <pre class="r"><code>roc &lt;- ggroc(list(smote_rf=modelroc_Srf,rose_rf=modelroc_Rrf,smote_tree=modelroc_Stree,rose_tree=modelroc_Rtree), legacy.axes = TRUE,aes =c(&quot;linetype&quot;)) + labs(x = &quot;FPR&quot; , y = &quot;TPR&quot;)
 roc</code></pre>
 <p><img src="data:image/png;base64,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" /><!-- --></p>
+</div>
+</div>
+<div id="ipqc-fqc-data-analysis-part-2" class="section level1">
+<h1>3. IPQC + FQC data analysis (Part 2)</h1>
+<div id="filter-variables-directly-by-standard-deviation" class="section level2">
+<h2>3.1 Filter variables directly by standard deviation</h2>
+<pre class="r"><code>load(&quot;~/HMD/RDATA/all_w.RData&quot;)
+
+#每一批只留完整的資料 
+all_w$name</code></pre>
+<pre><code>##  [1] 2223   2223.2 2232   2232.2 2233   2262   2263   2264   2264.2 2273  
+## [11] 2274   3012   3013   3014   3015   3016   3017   3021   3023   3051  
+## [21] 3052   3053   3063   3064   3066   3072   NG     2262.2 3014.2 3016.2
+## [31] 3021.2 3021.3 3023.2 3051.2 3066.2
+## 35 Levels: 2223 2223.2 2232 2232.2 2233 2262 2263 2264 2264.2 ... 3066.2</code></pre>
+<pre class="r"><code>class(all_w$name)</code></pre>
+<pre><code>## [1] &quot;factor&quot;</code></pre>
+<pre class="r"><code>all_w$name &lt;- as.character(all_w$name)
+all_onetest &lt;- all_w[-(grep(&quot;\\.&quot;,all_w$name)),]
+
+#只留下pass的23個obs
+all_onetest &lt;- all_onetest[-24,]</code></pre>
+<pre class="r"><code>#以整體資料來看，直接取sd較高的變數 
+sd &lt;- sapply(all_onetest[-1],sd,na.rm=T)
+(quan &lt;- quantile(sd, probs=seq(0,1,0.05))) #取3 作為sd門檻值</code></pre>
+<pre><code>##         0%         5%        10%        15%        20%        25% 
+##  0.9840627  1.3425243  1.4650068  1.5612651  1.6883571  1.8724090 
+##        30%        35%        40%        45%        50%        55% 
+##  2.2412659  7.1825503  7.9253873  8.4522013  9.0962138  9.5663467 
+##        60%        65%        70%        75%        80%        85% 
+## 10.4409482 14.4059109 15.3794717 16.6000976 17.9650639 21.1288956 
+##        90%        95%       100% 
+## 23.3940762 25.5509766 39.2470638</code></pre>
+<pre class="r"><code>all_onetest &lt;- rbind(all_onetest,sapply(all_onetest[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+all_onetest[24,1] &lt;- &quot;sd&quot; 
+filter_sd &lt;- all_onetest[,-which(all_onetest[24,]&lt;3)]
+#sort(filter_sd[24,-1])
+
+#col &lt;- sort(all_onetest[24,-1],decreasing = T)[1:20]
+#all_onetest &lt;- all_onetest[,c(&quot;name&quot;,colnames(col))]
+
+#篩選掉sd小於3的變數後，剩下306個變數</code></pre>
+<div id="clustering-without-pca" class="section level3">
+<h3>3.1.1 Clustering without PCA</h3>
+<pre class="r"><code>#讀取分類(級)表格
+library(xlsx)
+rank &lt;- read.xlsx(&quot;~/HMD/data-20180426/Table_v2.xlsx&quot;, encoding=&quot;UTF-8&quot;, startRow=1, endRow=24, sheetIndex=2)
+rank &lt;- rank[,c(4,7)]
+rank$name &lt;- as.character(rank$name)
+#合併分類表格跟filter_sd (sd那一row不會留下來)
+all_rank &lt;- merge(rank,filter_sd,by=&quot;name&quot;)
+
+#存篩選後資料框
+#save(all_rank, file = &quot;./RDATA/sd_rank.RData&quot;)
+
+#sd篩完後的資料直接以kmeans 分類
+cluster_3 &lt;- kmeans(all_rank[,3:308],3)
+all_rank$cluster_3 &lt;- as.factor(cluster_3$cluster)
+table(cluster_3$cluster,all_rank$New)</code></pre>
+<pre><code>##    
+##     A B C
+##   1 2 3 3
+##   2 1 1 2
+##   3 4 3 4</code></pre>
+<pre class="r"><code>#kmeans跟建立的分類沒有甚麼相似...</code></pre>
+</div>
+<div id="pca-clustering" class="section level3">
+<h3>3.1.2 PCA + Clustering</h3>
+<pre class="r"><code>#根據306個變數再進行pca 
+pcaObject &lt;- prcomp(all_rank[,3:308], center = TRUE, scale. = TRUE)
+percentVariance &lt;- pcaObject$sd^2/sum(pcaObject$sd^2)*100
+plot(percentVariance, 
+     xlab = &quot;Principal Component&quot;,
+     ylab = &quot;Proportion of Variance Explained &quot;, 
+     type = 'b')</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>#選十個主成分
+cumsum(percentVariance)</code></pre>
+<pre><code>##  [1]  21.44014  38.70452  51.21159  60.72962  66.47568  70.92443  74.20702
+##  [8]  76.99462  79.67338  82.20031  84.36300  86.34540  88.18157  89.96080
+## [15]  91.62516  93.12482  94.52746  95.80848  96.95213  98.04148  99.06107
+## [22] 100.00000 100.00000</code></pre>
+<pre class="r"><code>plot(cumsum(percentVariance))</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>#用caret做並繪圖
+library(caret)
+pp &lt;- preProcess(all_rank[,3:308], method = c(&quot;BoxCox&quot;,&quot;center&quot;, &quot;scale&quot;, &quot;pca&quot;))
+#PCA needed 10 components to capture 95 percent of the variance
+transformed &lt;- predict(pp, all_rank[,3:308])
+
+
+#畫scatter plot matrix ###
+##根據PCA分出來的前三項屬性跟我根據HMD的三個分類做散佈圖
+PCA &lt;- prcomp(transformed, center = TRUE, scale. = TRUE)
+#根據前十個pca去做kmeans
+pca_3 &lt;- transformed[,1:10]
+pc_kmeans &lt;- kmeans(pca_3,3)
+all_rank$pc_kmeans &lt;- as.factor(pc_kmeans$cluster)
+table(pc_kmeans$cluster,all_rank$New)</code></pre>
+<pre><code>##    
+##     A B C
+##   1 0 1 2
+##   2 5 3 4
+##   3 2 3 3</code></pre>
+<pre class="r"><code>table(pc_kmeans$cluster,all_rank$cluster_3)</code></pre>
+<pre><code>##    
+##      1  2  3
+##   1  0  3  0
+##   2  2  0 10
+##   3  6  1  1</code></pre>
+</div>
+</div>
+<div id="fiter-variables-by-standard-deviation-after-grouping-dimensions" class="section level2">
+<h2>3.2 Fiter variables by standard deviation after grouping dimensions</h2>
+<pre class="r"><code>load(&quot;~/HMD/RDATA/all_w.RData&quot;)
+
+#每一批只留完整的資料 
+all_w$name</code></pre>
+<pre><code>##  [1] 2223   2223.2 2232   2232.2 2233   2262   2263   2264   2264.2 2273  
+## [11] 2274   3012   3013   3014   3015   3016   3017   3021   3023   3051  
+## [21] 3052   3053   3063   3064   3066   3072   NG     2262.2 3014.2 3016.2
+## [31] 3021.2 3021.3 3023.2 3051.2 3066.2
+## 35 Levels: 2223 2223.2 2232 2232.2 2233 2262 2263 2264 2264.2 ... 3066.2</code></pre>
+<pre class="r"><code>class(all_w$name)</code></pre>
+<pre><code>## [1] &quot;factor&quot;</code></pre>
+<pre class="r"><code>all_w$name &lt;- as.character(all_w$name)
+all_onetest &lt;- all_w[-(grep(&quot;\\.&quot;,all_w$name)),]
+
+#只留下pass的23個obs
+all_onetest &lt;- all_onetest[-24,]
+
+#1. column name 開頭IP_G_II +F_G_II
+colnames(all_onetest)</code></pre>
+<pre><code>##   [1] &quot;name&quot;       &quot;IP_G_I_1&quot;   &quot;IP_G_I_10&quot;  &quot;IP_G_I_11&quot;  &quot;IP_G_I_12&quot; 
+##   [6] &quot;IP_G_I_13&quot;  &quot;IP_G_I_14&quot;  &quot;IP_G_I_15&quot;  &quot;IP_G_I_16&quot;  &quot;IP_G_I_17&quot; 
+##  [11] &quot;IP_G_I_18&quot;  &quot;IP_G_I_19&quot;  &quot;IP_G_I_2&quot;   &quot;IP_G_I_20&quot;  &quot;IP_G_I_21&quot; 
+##  [16] &quot;IP_G_I_22&quot;  &quot;IP_G_I_23&quot;  &quot;IP_G_I_24&quot;  &quot;IP_G_I_25&quot;  &quot;IP_G_I_26&quot; 
+##  [21] &quot;IP_G_I_27&quot;  &quot;IP_G_I_28&quot;  &quot;IP_G_I_29&quot;  &quot;IP_G_I_3&quot;   &quot;IP_G_I_30&quot; 
+##  [26] &quot;IP_G_I_31&quot;  &quot;IP_G_I_32&quot;  &quot;IP_G_I_33&quot;  &quot;IP_G_I_34&quot;  &quot;IP_G_I_35&quot; 
+##  [31] &quot;IP_G_I_36&quot;  &quot;IP_G_I_37&quot;  &quot;IP_G_I_38&quot;  &quot;IP_G_I_39&quot;  &quot;IP_G_I_4&quot;  
+##  [36] &quot;IP_G_I_40&quot;  &quot;IP_G_I_5&quot;   &quot;IP_G_I_6&quot;   &quot;IP_G_I_7&quot;   &quot;IP_G_I_8&quot;  
+##  [41] &quot;IP_G_I_9&quot;   &quot;IP_G_II_1&quot;  &quot;IP_G_II_10&quot; &quot;IP_G_II_11&quot; &quot;IP_G_II_12&quot;
+##  [46] &quot;IP_G_II_13&quot; &quot;IP_G_II_14&quot; &quot;IP_G_II_15&quot; &quot;IP_G_II_16&quot; &quot;IP_G_II_17&quot;
+##  [51] &quot;IP_G_II_18&quot; &quot;IP_G_II_19&quot; &quot;IP_G_II_2&quot;  &quot;IP_G_II_20&quot; &quot;IP_G_II_21&quot;
+##  [56] &quot;IP_G_II_22&quot; &quot;IP_G_II_23&quot; &quot;IP_G_II_24&quot; &quot;IP_G_II_25&quot; &quot;IP_G_II_26&quot;
+##  [61] &quot;IP_G_II_27&quot; &quot;IP_G_II_28&quot; &quot;IP_G_II_29&quot; &quot;IP_G_II_3&quot;  &quot;IP_G_II_30&quot;
+##  [66] &quot;IP_G_II_31&quot; &quot;IP_G_II_32&quot; &quot;IP_G_II_33&quot; &quot;IP_G_II_34&quot; &quot;IP_G_II_35&quot;
+##  [71] &quot;IP_G_II_36&quot; &quot;IP_G_II_37&quot; &quot;IP_G_II_38&quot; &quot;IP_G_II_39&quot; &quot;IP_G_II_4&quot; 
+##  [76] &quot;IP_G_II_40&quot; &quot;IP_G_II_5&quot;  &quot;IP_G_II_6&quot;  &quot;IP_G_II_7&quot;  &quot;IP_G_II_8&quot; 
+##  [81] &quot;IP_G_II_9&quot;  &quot;IP_b_I_1&quot;   &quot;IP_b_I_10&quot;  &quot;IP_b_I_11&quot;  &quot;IP_b_I_12&quot; 
+##  [86] &quot;IP_b_I_13&quot;  &quot;IP_b_I_14&quot;  &quot;IP_b_I_15&quot;  &quot;IP_b_I_16&quot;  &quot;IP_b_I_17&quot; 
+##  [91] &quot;IP_b_I_18&quot;  &quot;IP_b_I_19&quot;  &quot;IP_b_I_2&quot;   &quot;IP_b_I_20&quot;  &quot;IP_b_I_21&quot; 
+##  [96] &quot;IP_b_I_22&quot;  &quot;IP_b_I_23&quot;  &quot;IP_b_I_24&quot;  &quot;IP_b_I_25&quot;  &quot;IP_b_I_26&quot; 
+## [101] &quot;IP_b_I_27&quot;  &quot;IP_b_I_28&quot;  &quot;IP_b_I_29&quot;  &quot;IP_b_I_3&quot;   &quot;IP_b_I_30&quot; 
+## [106] &quot;IP_b_I_31&quot;  &quot;IP_b_I_32&quot;  &quot;IP_b_I_33&quot;  &quot;IP_b_I_34&quot;  &quot;IP_b_I_35&quot; 
+## [111] &quot;IP_b_I_36&quot;  &quot;IP_b_I_37&quot;  &quot;IP_b_I_38&quot;  &quot;IP_b_I_39&quot;  &quot;IP_b_I_4&quot;  
+## [116] &quot;IP_b_I_40&quot;  &quot;IP_b_I_5&quot;   &quot;IP_b_I_6&quot;   &quot;IP_b_I_7&quot;   &quot;IP_b_I_8&quot;  
+## [121] &quot;IP_b_I_9&quot;   &quot;IP_b_II_1&quot;  &quot;IP_b_II_10&quot; &quot;IP_b_II_11&quot; &quot;IP_b_II_12&quot;
+## [126] &quot;IP_b_II_13&quot; &quot;IP_b_II_14&quot; &quot;IP_b_II_15&quot; &quot;IP_b_II_16&quot; &quot;IP_b_II_17&quot;
+## [131] &quot;IP_b_II_18&quot; &quot;IP_b_II_19&quot; &quot;IP_b_II_2&quot;  &quot;IP_b_II_20&quot; &quot;IP_b_II_21&quot;
+## [136] &quot;IP_b_II_22&quot; &quot;IP_b_II_23&quot; &quot;IP_b_II_24&quot; &quot;IP_b_II_25&quot; &quot;IP_b_II_26&quot;
+## [141] &quot;IP_b_II_27&quot; &quot;IP_b_II_28&quot; &quot;IP_b_II_29&quot; &quot;IP_b_II_3&quot;  &quot;IP_b_II_30&quot;
+## [146] &quot;IP_b_II_31&quot; &quot;IP_b_II_32&quot; &quot;IP_b_II_33&quot; &quot;IP_b_II_34&quot; &quot;IP_b_II_35&quot;
+## [151] &quot;IP_b_II_36&quot; &quot;IP_b_II_37&quot; &quot;IP_b_II_38&quot; &quot;IP_b_II_39&quot; &quot;IP_b_II_4&quot; 
+## [156] &quot;IP_b_II_40&quot; &quot;IP_b_II_5&quot;  &quot;IP_b_II_6&quot;  &quot;IP_b_II_7&quot;  &quot;IP_b_II_8&quot; 
+## [161] &quot;IP_b_II_9&quot;  &quot;F_G_I_1&quot;    &quot;F_G_I_10&quot;   &quot;F_G_I_100&quot;  &quot;F_G_I_11&quot;  
+## [166] &quot;F_G_I_12&quot;   &quot;F_G_I_13&quot;   &quot;F_G_I_14&quot;   &quot;F_G_I_15&quot;   &quot;F_G_I_16&quot;  
+## [171] &quot;F_G_I_17&quot;   &quot;F_G_I_18&quot;   &quot;F_G_I_19&quot;   &quot;F_G_I_2&quot;    &quot;F_G_I_20&quot;  
+## [176] &quot;F_G_I_21&quot;   &quot;F_G_I_22&quot;   &quot;F_G_I_23&quot;   &quot;F_G_I_24&quot;   &quot;F_G_I_25&quot;  
+## [181] &quot;F_G_I_26&quot;   &quot;F_G_I_27&quot;   &quot;F_G_I_28&quot;   &quot;F_G_I_29&quot;   &quot;F_G_I_3&quot;   
+## [186] &quot;F_G_I_30&quot;   &quot;F_G_I_31&quot;   &quot;F_G_I_32&quot;   &quot;F_G_I_33&quot;   &quot;F_G_I_34&quot;  
+## [191] &quot;F_G_I_35&quot;   &quot;F_G_I_36&quot;   &quot;F_G_I_37&quot;   &quot;F_G_I_38&quot;   &quot;F_G_I_39&quot;  
+## [196] &quot;F_G_I_4&quot;    &quot;F_G_I_40&quot;   &quot;F_G_I_41&quot;   &quot;F_G_I_42&quot;   &quot;F_G_I_43&quot;  
+## [201] &quot;F_G_I_44&quot;   &quot;F_G_I_45&quot;   &quot;F_G_I_46&quot;   &quot;F_G_I_47&quot;   &quot;F_G_I_48&quot;  
+## [206] &quot;F_G_I_49&quot;   &quot;F_G_I_5&quot;    &quot;F_G_I_50&quot;   &quot;F_G_I_51&quot;   &quot;F_G_I_52&quot;  
+## [211] &quot;F_G_I_53&quot;   &quot;F_G_I_54&quot;   &quot;F_G_I_55&quot;   &quot;F_G_I_56&quot;   &quot;F_G_I_57&quot;  
+## [216] &quot;F_G_I_58&quot;   &quot;F_G_I_59&quot;   &quot;F_G_I_6&quot;    &quot;F_G_I_60&quot;   &quot;F_G_I_61&quot;  
+## [221] &quot;F_G_I_62&quot;   &quot;F_G_I_63&quot;   &quot;F_G_I_64&quot;   &quot;F_G_I_65&quot;   &quot;F_G_I_66&quot;  
+## [226] &quot;F_G_I_67&quot;   &quot;F_G_I_68&quot;   &quot;F_G_I_69&quot;   &quot;F_G_I_7&quot;    &quot;F_G_I_70&quot;  
+## [231] &quot;F_G_I_71&quot;   &quot;F_G_I_72&quot;   &quot;F_G_I_73&quot;   &quot;F_G_I_74&quot;   &quot;F_G_I_75&quot;  
+## [236] &quot;F_G_I_76&quot;   &quot;F_G_I_77&quot;   &quot;F_G_I_78&quot;   &quot;F_G_I_79&quot;   &quot;F_G_I_8&quot;   
+## [241] &quot;F_G_I_80&quot;   &quot;F_G_I_81&quot;   &quot;F_G_I_82&quot;   &quot;F_G_I_83&quot;   &quot;F_G_I_84&quot;  
+## [246] &quot;F_G_I_85&quot;   &quot;F_G_I_86&quot;   &quot;F_G_I_87&quot;   &quot;F_G_I_88&quot;   &quot;F_G_I_89&quot;  
+## [251] &quot;F_G_I_9&quot;    &quot;F_G_I_90&quot;   &quot;F_G_I_91&quot;   &quot;F_G_I_92&quot;   &quot;F_G_I_93&quot;  
+## [256] &quot;F_G_I_94&quot;   &quot;F_G_I_95&quot;   &quot;F_G_I_96&quot;   &quot;F_G_I_97&quot;   &quot;F_G_I_98&quot;  
+## [261] &quot;F_G_I_99&quot;   &quot;F_G_II_1&quot;   &quot;F_G_II_10&quot;  &quot;F_G_II_100&quot; &quot;F_G_II_11&quot; 
+## [266] &quot;F_G_II_12&quot;  &quot;F_G_II_13&quot;  &quot;F_G_II_14&quot;  &quot;F_G_II_15&quot;  &quot;F_G_II_16&quot; 
+## [271] &quot;F_G_II_17&quot;  &quot;F_G_II_18&quot;  &quot;F_G_II_19&quot;  &quot;F_G_II_2&quot;   &quot;F_G_II_20&quot; 
+## [276] &quot;F_G_II_21&quot;  &quot;F_G_II_22&quot;  &quot;F_G_II_23&quot;  &quot;F_G_II_24&quot;  &quot;F_G_II_25&quot; 
+## [281] &quot;F_G_II_26&quot;  &quot;F_G_II_27&quot;  &quot;F_G_II_28&quot;  &quot;F_G_II_29&quot;  &quot;F_G_II_3&quot;  
+## [286] &quot;F_G_II_30&quot;  &quot;F_G_II_31&quot;  &quot;F_G_II_32&quot;  &quot;F_G_II_33&quot;  &quot;F_G_II_34&quot; 
+## [291] &quot;F_G_II_35&quot;  &quot;F_G_II_36&quot;  &quot;F_G_II_37&quot;  &quot;F_G_II_38&quot;  &quot;F_G_II_39&quot; 
+## [296] &quot;F_G_II_4&quot;   &quot;F_G_II_40&quot;  &quot;F_G_II_41&quot;  &quot;F_G_II_42&quot;  &quot;F_G_II_43&quot; 
+## [301] &quot;F_G_II_44&quot;  &quot;F_G_II_45&quot;  &quot;F_G_II_46&quot;  &quot;F_G_II_47&quot;  &quot;F_G_II_48&quot; 
+## [306] &quot;F_G_II_49&quot;  &quot;F_G_II_5&quot;   &quot;F_G_II_50&quot;  &quot;F_G_II_51&quot;  &quot;F_G_II_52&quot; 
+## [311] &quot;F_G_II_53&quot;  &quot;F_G_II_54&quot;  &quot;F_G_II_55&quot;  &quot;F_G_II_56&quot;  &quot;F_G_II_57&quot; 
+## [316] &quot;F_G_II_58&quot;  &quot;F_G_II_59&quot;  &quot;F_G_II_6&quot;   &quot;F_G_II_60&quot;  &quot;F_G_II_61&quot; 
+## [321] &quot;F_G_II_62&quot;  &quot;F_G_II_63&quot;  &quot;F_G_II_64&quot;  &quot;F_G_II_65&quot;  &quot;F_G_II_66&quot; 
+## [326] &quot;F_G_II_67&quot;  &quot;F_G_II_68&quot;  &quot;F_G_II_69&quot;  &quot;F_G_II_7&quot;   &quot;F_G_II_70&quot; 
+## [331] &quot;F_G_II_71&quot;  &quot;F_G_II_72&quot;  &quot;F_G_II_73&quot;  &quot;F_G_II_74&quot;  &quot;F_G_II_75&quot; 
+## [336] &quot;F_G_II_76&quot;  &quot;F_G_II_77&quot;  &quot;F_G_II_78&quot;  &quot;F_G_II_79&quot;  &quot;F_G_II_8&quot;  
+## [341] &quot;F_G_II_80&quot;  &quot;F_G_II_81&quot;  &quot;F_G_II_82&quot;  &quot;F_G_II_83&quot;  &quot;F_G_II_84&quot; 
+## [346] &quot;F_G_II_85&quot;  &quot;F_G_II_86&quot;  &quot;F_G_II_87&quot;  &quot;F_G_II_88&quot;  &quot;F_G_II_89&quot; 
+## [351] &quot;F_G_II_9&quot;   &quot;F_G_II_90&quot;  &quot;F_G_II_91&quot;  &quot;F_G_II_92&quot;  &quot;F_G_II_93&quot; 
+## [356] &quot;F_G_II_94&quot;  &quot;F_G_II_95&quot;  &quot;F_G_II_96&quot;  &quot;F_G_II_97&quot;  &quot;F_G_II_98&quot; 
+## [361] &quot;F_G_II_99&quot;  &quot;F_b_I_1&quot;    &quot;F_b_I_10&quot;   &quot;F_b_I_11&quot;   &quot;F_b_I_12&quot;  
+## [366] &quot;F_b_I_13&quot;   &quot;F_b_I_14&quot;   &quot;F_b_I_15&quot;   &quot;F_b_I_16&quot;   &quot;F_b_I_17&quot;  
+## [371] &quot;F_b_I_18&quot;   &quot;F_b_I_19&quot;   &quot;F_b_I_2&quot;    &quot;F_b_I_20&quot;   &quot;F_b_I_21&quot;  
+## [376] &quot;F_b_I_22&quot;   &quot;F_b_I_23&quot;   &quot;F_b_I_24&quot;   &quot;F_b_I_25&quot;   &quot;F_b_I_26&quot;  
+## [381] &quot;F_b_I_27&quot;   &quot;F_b_I_28&quot;   &quot;F_b_I_29&quot;   &quot;F_b_I_3&quot;    &quot;F_b_I_30&quot;  
+## [386] &quot;F_b_I_31&quot;   &quot;F_b_I_32&quot;   &quot;F_b_I_33&quot;   &quot;F_b_I_34&quot;   &quot;F_b_I_35&quot;  
+## [391] &quot;F_b_I_36&quot;   &quot;F_b_I_37&quot;   &quot;F_b_I_38&quot;   &quot;F_b_I_39&quot;   &quot;F_b_I_4&quot;   
+## [396] &quot;F_b_I_40&quot;   &quot;F_b_I_5&quot;    &quot;F_b_I_6&quot;    &quot;F_b_I_7&quot;    &quot;F_b_I_8&quot;   
+## [401] &quot;F_b_I_9&quot;    &quot;F_b_II_1&quot;   &quot;F_b_II_10&quot;  &quot;F_b_II_11&quot;  &quot;F_b_II_12&quot; 
+## [406] &quot;F_b_II_13&quot;  &quot;F_b_II_14&quot;  &quot;F_b_II_15&quot;  &quot;F_b_II_16&quot;  &quot;F_b_II_17&quot; 
+## [411] &quot;F_b_II_18&quot;  &quot;F_b_II_19&quot;  &quot;F_b_II_2&quot;   &quot;F_b_II_20&quot;  &quot;F_b_II_21&quot; 
+## [416] &quot;F_b_II_22&quot;  &quot;F_b_II_23&quot;  &quot;F_b_II_24&quot;  &quot;F_b_II_25&quot;  &quot;F_b_II_26&quot; 
+## [421] &quot;F_b_II_27&quot;  &quot;F_b_II_28&quot;  &quot;F_b_II_29&quot;  &quot;F_b_II_3&quot;   &quot;F_b_II_30&quot; 
+## [426] &quot;F_b_II_31&quot;  &quot;F_b_II_32&quot;  &quot;F_b_II_33&quot;  &quot;F_b_II_34&quot;  &quot;F_b_II_35&quot; 
+## [431] &quot;F_b_II_36&quot;  &quot;F_b_II_37&quot;  &quot;F_b_II_38&quot;  &quot;F_b_II_39&quot;  &quot;F_b_II_4&quot;  
+## [436] &quot;F_b_II_40&quot;  &quot;F_b_II_5&quot;   &quot;F_b_II_6&quot;   &quot;F_b_II_7&quot;   &quot;F_b_II_8&quot;  
+## [441] &quot;F_b_II_9&quot;</code></pre>
+<pre class="r"><code>IP_G_II &lt;- grep(&quot;IP_G_II&quot;,colnames(all_onetest))
+F_G_II &lt;- grep(&quot;F_G_II&quot;,colnames(all_onetest))
+G_II &lt;- all_onetest[,c(1,IP_G_II,F_G_II)]
+rm(IP_G_II,F_G_II)
+
+#取sd
+sd &lt;- sapply(G_II[-1],sd,na.rm=T)
+(quan &lt;- quantile(sd, probs=seq(0,1,0.05))) #取8 作為sd門檻值</code></pre>
+<pre><code>##        0%        5%       10%       15%       20%       25%       30% 
+##  5.531798  6.479204  7.080499  7.284452  7.602990  7.868858  7.968437 
+##       35%       40%       45%       50%       55%       60%       65% 
+##  8.212664  8.346813  8.627035  8.859247  9.048530  9.102708  9.254462 
+##       70%       75%       80%       85%       90%       95%      100% 
+##  9.489035  9.597589  9.818782 10.021212 10.363854 11.138995 26.158003</code></pre>
+<pre class="r"><code>G_II &lt;- rbind(G_II,sapply(G_II[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+G_II[24,1] &lt;- &quot;sd&quot; 
+G_II &lt;- G_II[,-which(G_II[24,]&lt;8)]
+sort(G_II[24,-1])  #剩96個變數</code></pre>
+<pre><code>##     F_G_II_82 F_G_II_38 F_G_II_99 F_G_II_84 F_G_II_50 F_G_II_78 IP_G_II_15
+## 241  8.018753  8.044835  8.095038  8.117955  8.162384  8.239738   8.249805
+##     F_G_II_32 F_G_II_53 F_G_II_8 F_G_II_65 IP_G_II_7 F_G_II_90 F_G_II_88
+## 241  8.255313  8.272293 8.305672  8.311143  8.326348  8.360457  8.378638
+##     F_G_II_13 F_G_II_74 F_G_II_100 F_G_II_64 F_G_II_60 F_G_II_91 F_G_II_75
+## 241   8.38194  8.435995   8.465461  8.536599  8.600947  8.648379   8.65409
+##     IP_G_II_18 F_G_II_63 IP_G_II_31 IP_G_II_6 F_G_II_47 IP_G_II_10
+## 241   8.654319   8.67553   8.745411  8.783519  8.815859   8.902635
+##     F_G_II_34 F_G_II_25 F_G_II_22 IP_G_II_22 F_G_II_7 F_G_II_96 IP_G_II_9
+## 241  8.906852   8.93366  8.938967   9.001537 9.013823  9.047743  9.049491
+##     IP_G_II_14 F_G_II_14 F_G_II_56 F_G_II_3 F_G_II_5 IP_G_II_32 IP_G_II_11
+## 241   9.053421  9.064983    9.0848 9.095453 9.096974   9.102621   9.102838
+##     IP_G_II_2 F_G_II_26 IP_G_II_20 F_G_II_58 IP_G_II_27 F_G_II_28
+## 241  9.119757  9.137509   9.155011  9.161701   9.178295  9.253565
+##     F_G_II_35 F_G_II_98 F_G_II_16 IP_G_II_35 IP_G_II_19 F_G_II_79
+## 241  9.256127  9.357629  9.379567   9.380621   9.462637  9.473491
+##     IP_G_II_34 F_G_II_37 F_G_II_18 F_G_II_20 F_G_II_2 IP_G_II_13
+## 241    9.48204  9.505355  9.516576  9.517614 9.541671   9.548089
+##     IP_G_II_29 F_G_II_69 F_G_II_55 F_G_II_6 F_G_II_9 IP_G_II_3 IP_G_II_28
+## 241   9.561327  9.572482  9.672912 9.675976 9.704121  9.753686   9.766443
+##     F_G_II_71 F_G_II_89 F_G_II_48 F_G_II_52 F_G_II_24 F_G_II_73 IP_G_II_12
+## 241  9.787465  9.811464  9.848055   9.85648  9.935364  9.970906   9.990114
+##     F_G_II_30 IP_G_II_4 IP_G_II_38 F_G_II_29 F_G_II_67 IP_G_II_40
+## 241  9.995256  10.01501   10.05636   10.1374  10.14324    10.1732
+##     IP_G_II_39 F_G_II_4 F_G_II_49 IP_G_II_17 F_G_II_39 F_G_II_11
+## 241   10.19726 10.24174  10.33816   10.59514  10.61992  10.64427
+##     IP_G_II_16 F_G_II_19 F_G_II_21 F_G_II_23 F_G_II_59 F_G_II_1 IP_G_II_33
+## 241   10.84913  10.89802  10.99982   11.1231  11.44103 11.44518    11.4726
+##     F_G_II_12 IP_G_II_36 F_G_II_15 F_G_II_86
+## 241  11.55602   11.65665  11.66156    26.158</code></pre>
+<pre class="r"><code>#2. column name 開頭IP_b_II +F_b_II
+IP_b_II &lt;- grep(&quot;IP_b_II&quot;,colnames(all_onetest))
+F_b_II &lt;- grep(&quot;F_b_II&quot;,colnames(all_onetest))
+b_II &lt;- all_onetest[,c(1,IP_b_II,F_b_II)]
+rm(IP_b_II,F_b_II)
+
+#取sd
+sd &lt;- sapply(b_II[-1],sd,na.rm=T)
+(quan &lt;- quantile(sd, probs=seq(0,1,0.05))) #取22.5 作為sd門檻值</code></pre>
+<pre><code>##       0%       5%      10%      15%      20%      25%      30%      35% 
+## 18.78566 19.58810 20.43538 20.88629 21.33455 21.90288 22.41526 22.83687 
+##      40%      45%      50%      55%      60%      65%      70%      75% 
+## 23.09973 23.37391 23.62645 23.69315 24.53312 25.25035 25.47333 25.67357 
+##      80%      85%      90%      95%     100% 
+## 26.00922 26.44673 27.33156 29.50327 39.24706</code></pre>
+<pre class="r"><code>b_II &lt;- rbind(b_II,sapply(b_II[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+b_II[24,1] &lt;- &quot;sd&quot; 
+b_II &lt;- b_II[,-which(b_II[24,]&lt;22.5)]
+sort(b_II[24,-1])  #剩54個變數</code></pre>
+<pre><code>##     F_b_II_16 IP_b_II_15 F_b_II_30 IP_b_II_1 F_b_II_20 F_b_II_2 IP_b_II_14
+## 241  22.70258   22.81876  22.84663  22.90477  22.95424 23.08011    23.1128
+##     F_b_II_26 IP_b_II_37 F_b_II_35 IP_b_II_39 IP_b_II_9 F_b_II_5 F_b_II_1
+## 241   23.1771    23.3244  23.36647      23.38  23.52074 23.59507 23.61048
+##     F_b_II_38 IP_b_II_4 IP_b_II_13 IP_b_II_3 IP_b_II_16 F_b_II_33
+## 241  23.64243  23.64293    23.6436  23.65037   23.74544  24.17893
+##     F_b_II_19 F_b_II_4 F_b_II_22 IP_b_II_25 F_b_II_6 IP_b_II_38 IP_b_II_35
+## 241  24.33073  24.4995  24.58357   24.96345 25.17834   25.22954     25.289
+##     F_b_II_25 IP_b_II_23 IP_b_II_19 IP_b_II_11 F_b_II_8 IP_b_II_22
+## 241  25.29635     25.425    25.4574   25.51052  25.5298   25.54466
+##     IP_b_II_29 IP_b_II_18 F_b_II_15 IP_b_II_28 F_b_II_37 IP_b_II_26
+## 241     25.671   25.68131  25.75447   25.79503  25.99726   26.05702
+##     IP_b_II_40 F_b_II_7 IP_b_II_34 IP_b_II_5 IP_b_II_31 IP_b_II_24
+## 241   26.11135 26.34268   26.43083   26.5368   26.94204   26.97246
+##     F_b_II_9 F_b_II_28 IP_b_II_27 IP_b_II_21 F_b_II_11 IP_b_II_10
+## 241 27.32407  27.39897   28.21319    28.4902  29.45292   30.45991
+##     F_b_II_24 F_b_II_23 F_b_II_21
+## 241  30.70052  31.04167  39.24706</code></pre>
+<pre class="r"><code>#3. column name 開頭IP_G_I +F_G_I 
+# 若直接grep&quot;IP_G_I&quot;，&quot;IP_G_II&quot;也會被抓到，所以要用以下語法，抓出&quot;IP_G_I&quot;再屏除&quot;IP_G_II&quot;
+IP_G_I &lt;- grep(&quot;^(?=.*IP_G_I)(?!.*IP_G_II)&quot;, colnames(all_onetest), perl=TRUE)
+F_G_I &lt;- grep(&quot;^(?=.*F_G_I)(?!.*F_G_II)&quot;, colnames(all_onetest), perl=TRUE)
+G_I &lt;- all_onetest[,c(1,IP_G_I,F_G_I)]
+rm(IP_G_I,F_G_I)
+
+#取sd
+sd &lt;- sapply(G_I[-1],sd,na.rm=T)
+(quan &lt;- quantile(sd, probs=seq(0,1,0.05))) #取1.5 作為sd門檻值</code></pre>
+<pre><code>##         0%         5%        10%        15%        20%        25% 
+##  0.9840627  1.1846142  1.3079263  1.3416391  1.3629774  1.4072069 
+##        30%        35%        40%        45%        50%        55% 
+##  1.4564673  1.4855025  1.5213889  1.5444530  1.5660679  1.6057569 
+##        60%        65%        70%        75%        80%        85% 
+##  1.6471318  1.7044466  1.7523552  1.8210442  1.8889625  1.9698991 
+##        90%        95%       100% 
+##  2.0671203  2.2549423 13.7203867</code></pre>
+<pre class="r"><code>G_I &lt;- rbind(G_I,sapply(G_I[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+G_I[24,1] &lt;- &quot;sd&quot; 
+G_I &lt;- G_I[,-which(G_I[24,]&lt;1.5)]
+sort(G_I[24,-1])  #剩89個變數</code></pre>
+<pre><code>##     F_G_I_100 F_G_I_77 F_G_I_30 F_G_I_67  F_G_I_2 F_G_I_10 F_G_I_82
+## 241  1.502304 1.503619 1.514097 1.514097 1.520609 1.521909 1.525799
+##     IP_G_I_6 F_G_I_94 F_G_I_87  F_G_I_1  F_G_I_3 IP_G_I_4 IP_G_I_3
+## 241 1.527094 1.532262 1.533551 1.536126 1.537412 1.550214 1.556575
+##     F_G_I_78 F_G_I_81 F_G_I_12  F_G_I_5 F_G_I_79 F_G_I_15 F_G_I_63
+## 241 1.559112 1.561645  1.56291 1.565437 1.565437 1.566699 1.572993
+##     F_G_I_52 IP_G_I_32 IP_G_I_33 IP_G_I_34 F_G_I_91  F_G_I_9 F_G_I_50
+## 241 1.584261  1.587998  1.587998  1.590486 1.604096 1.607787 1.612697
+##     IP_G_I_35 F_G_I_17 F_G_I_71 F_G_I_47 F_G_I_93  F_G_I_6 F_G_I_98
+## 241  1.622471 1.635815 1.635815 1.641844 1.646652 1.647852 1.647852
+##     F_G_I_49 F_G_I_95 F_G_I_86 IP_G_I_28 F_G_I_14 F_G_I_55 F_G_I_92
+## 241   1.6693 1.675209 1.691644  1.695145 1.704447 1.704447 1.704447
+##     F_G_I_38 F_G_I_85  F_G_I_8 F_G_I_59 F_G_I_75 F_G_I_39 F_G_I_74
+## 241 1.718304 1.721751 1.728624 1.749082 1.751341 1.754723 1.754723
+##     F_G_I_69 F_G_I_11 F_G_I_24 F_G_I_19 IP_G_I_12 F_G_I_76 F_G_I_89
+## 241  1.76371 1.769303 1.789296 1.806882   1.81996 1.824298 1.829707
+##     F_G_I_61 F_G_I_20 IP_G_I_20 F_G_I_51 F_G_I_18 F_G_I_58 F_G_I_83
+## 241 1.854383  1.86395  1.866069 1.874522 1.881888 1.917261 1.945909
+##     F_G_I_13 IP_G_I_25 IP_G_I_21 IP_G_I_36  F_G_I_7 F_G_I_96 IP_G_I_8
+## 241 1.947939  1.951993  1.964105  1.964105 1.965111 1.997033 2.018687
+##     F_G_I_57 IP_G_I_24 F_G_I_23 F_G_I_29 F_G_I_88 F_G_I_21 F_G_I_70
+## 241 2.018687  2.021622 2.036233 2.051703  2.06323 2.102135 2.106831
+##     F_G_I_73 IP_G_I_22 IP_G_I_14 IP_G_I_23 F_G_I_97 IP_G_I_26 IP_G_I_40
+## 241 2.144945   2.17332  2.191431  2.230759 2.245769  2.429236  3.993572
+##     IP_G_I_19 IP_G_I_9 F_G_I_54 F_G_I_66 F_G_I_56
+## 241  3.996045 5.011844  5.21286 12.07143 13.72039</code></pre>
+<pre class="r"><code>#4. column name 開頭IP_b_I +F_b_I
+IP_b_I &lt;- grep(&quot;^(?=.*IP_b_I)(?!.*IP_b_II)&quot;, colnames(all_onetest), perl=TRUE)
+F_b_I &lt;- grep(&quot;^(?=.*F_b_I)(?!.*F_b_II)&quot;, colnames(all_onetest), perl=TRUE)
+b_I &lt;- all_onetest[,c(1,IP_b_I,F_b_I)]
+rm(IP_b_I,F_b_I)
+
+#取sd
+sd &lt;- sapply(b_I[-1],sd,na.rm=T)
+(quan &lt;- quantile(sd, probs=seq(0,1,0.05))) #取15.5 作為sd門檻值</code></pre>
+<pre><code>##       0%       5%      10%      15%      20%      25%      30%      35% 
+## 13.62136 14.28773 14.54280 14.68713 14.91334 15.03912 15.26915 15.36007 
+##      40%      45%      50%      55%      60%      65%      70%      75% 
+## 15.61036 15.71124 15.97024 16.12521 16.43565 16.61230 16.85881 17.06943 
+##      80%      85%      90%      95%     100% 
+## 17.37802 17.65775 17.93349 18.31510 19.69290</code></pre>
+<pre class="r"><code>b_I &lt;- rbind(b_I,sapply(b_I[-1],sd,na.rm=T)) #將sd計算結果併到dataframe下
+b_I[24,1] &lt;- &quot;sd&quot; 
+b_I &lt;- b_I[,-which(b_I[24,]&lt;15.5)]
+sort(G_I[24,-1])  #剩50個變數</code></pre>
+<pre><code>##     F_G_I_100 F_G_I_77 F_G_I_30 F_G_I_67  F_G_I_2 F_G_I_10 F_G_I_82
+## 241  1.502304 1.503619 1.514097 1.514097 1.520609 1.521909 1.525799
+##     IP_G_I_6 F_G_I_94 F_G_I_87  F_G_I_1  F_G_I_3 IP_G_I_4 IP_G_I_3
+## 241 1.527094 1.532262 1.533551 1.536126 1.537412 1.550214 1.556575
+##     F_G_I_78 F_G_I_81 F_G_I_12  F_G_I_5 F_G_I_79 F_G_I_15 F_G_I_63
+## 241 1.559112 1.561645  1.56291 1.565437 1.565437 1.566699 1.572993
+##     F_G_I_52 IP_G_I_32 IP_G_I_33 IP_G_I_34 F_G_I_91  F_G_I_9 F_G_I_50
+## 241 1.584261  1.587998  1.587998  1.590486 1.604096 1.607787 1.612697
+##     IP_G_I_35 F_G_I_17 F_G_I_71 F_G_I_47 F_G_I_93  F_G_I_6 F_G_I_98
+## 241  1.622471 1.635815 1.635815 1.641844 1.646652 1.647852 1.647852
+##     F_G_I_49 F_G_I_95 F_G_I_86 IP_G_I_28 F_G_I_14 F_G_I_55 F_G_I_92
+## 241   1.6693 1.675209 1.691644  1.695145 1.704447 1.704447 1.704447
+##     F_G_I_38 F_G_I_85  F_G_I_8 F_G_I_59 F_G_I_75 F_G_I_39 F_G_I_74
+## 241 1.718304 1.721751 1.728624 1.749082 1.751341 1.754723 1.754723
+##     F_G_I_69 F_G_I_11 F_G_I_24 F_G_I_19 IP_G_I_12 F_G_I_76 F_G_I_89
+## 241  1.76371 1.769303 1.789296 1.806882   1.81996 1.824298 1.829707
+##     F_G_I_61 F_G_I_20 IP_G_I_20 F_G_I_51 F_G_I_18 F_G_I_58 F_G_I_83
+## 241 1.854383  1.86395  1.866069 1.874522 1.881888 1.917261 1.945909
+##     F_G_I_13 IP_G_I_25 IP_G_I_21 IP_G_I_36  F_G_I_7 F_G_I_96 IP_G_I_8
+## 241 1.947939  1.951993  1.964105  1.964105 1.965111 1.997033 2.018687
+##     F_G_I_57 IP_G_I_24 F_G_I_23 F_G_I_29 F_G_I_88 F_G_I_21 F_G_I_70
+## 241 2.018687  2.021622 2.036233 2.051703  2.06323 2.102135 2.106831
+##     F_G_I_73 IP_G_I_22 IP_G_I_14 IP_G_I_23 F_G_I_97 IP_G_I_26 IP_G_I_40
+## 241 2.144945   2.17332  2.191431  2.230759 2.245769  2.429236  3.993572
+##     IP_G_I_19 IP_G_I_9 F_G_I_54 F_G_I_66 F_G_I_56
+## 241  3.996045 5.011844  5.21286 12.07143 13.72039</code></pre>
+<pre class="r"><code>filter &lt;- union(colnames(b_I),colnames(b_II))
+filter &lt;- union(filter,colnames(G_I))
+filter &lt;- union(filter,colnames(G_II))
+
+#filter為根據四個group篩選sd 取出的289個變數
+filter &lt;- all_onetest[,filter]</code></pre>
+<div id="clustering-without-pca-1" class="section level3">
+<h3>3.2.1 Clustering without PCA</h3>
+<pre class="r"><code>#加入分級標籤，存RData
+library(xlsx)
+rank &lt;- read.xlsx(&quot;~/HMD/data-20180426/Table_v2.xlsx&quot;, encoding=&quot;UTF-8&quot;, startRow=1, endRow=24, sheetIndex=2)
+rank &lt;- rank[,c(4,7)]
+rank$name &lt;- as.character(rank$name)
+#合併分類表格跟filter_sd (sd那一row不會留下來)
+all_rank &lt;- merge(rank,filter,by=&quot;name&quot;)
+# save(all_rank, file = &quot;./RDATA/group_sd_rank.RData&quot;)
+
+#sd篩完後的資料直接以kmeans 分類
+cluster_3 &lt;- kmeans(filter[,2:290],3)
+filter$cluster_3 &lt;- as.factor(cluster_3$cluster)
+table(filter$cluster_3,all_rank$New)</code></pre>
+<pre><code>##    
+##     A B C
+##   1 3 3 2
+##   2 0 1 2
+##   3 4 3 5</code></pre>
+</div>
+<div id="pca-clustering-1" class="section level3">
+<h3>3.2.2 PCA + Clustering</h3>
+<pre class="r"><code>#加入分級標籤，存RData
+library(xlsx)
+rank &lt;- read.xlsx(&quot;~/HMD/data-20180426/Table_v2.xlsx&quot;, encoding=&quot;UTF-8&quot;, startRow=1, endRow=24, sheetIndex=2)
+rank &lt;- rank[,c(4,7)]
+rank$name &lt;- as.character(rank$name)
+#合併分類表格跟filter_sd (sd那一row不會留下來)
+all_rank &lt;- merge(rank,filter,by=&quot;name&quot;)
+# save(all_rank, file = &quot;./RDATA/group_sd_rank.RData&quot;)
+
+#sd篩完後的資料直接以kmeans 分類
+cluster_3 &lt;- kmeans(filter[,2:290],3)
+filter$cluster_3 &lt;- as.factor(cluster_3$cluster)
+table(filter$cluster_3,all_rank$New)</code></pre>
+<pre><code>##    
+##     A B C
+##   1 0 1 2
+##   2 3 3 2
+##   3 4 3 5</code></pre>
+<pre class="r"><code>#用caret做PCA並繪圖
+library(caret)
+pp &lt;- preProcess(all_rank[,3:291], method = c(&quot;BoxCox&quot;,&quot;center&quot;, &quot;scale&quot;, &quot;pca&quot;))
+#PCA needed 10 components to capture 95 percent of the variance
+transformed &lt;- predict(pp, all_rank[,3:291])
+
+
+pcaObject &lt;- prcomp(all_rank[,3:291], center = TRUE, scale. = TRUE)
+percentVariance &lt;- pcaObject$sd^2/sum(pcaObject$sd^2)*100
+plot(percentVariance, 
+     xlab = &quot;Principal Component&quot;,
+     ylab = &quot;Proportion of Variance Explained &quot;, 
+     type = 'b')</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>#選十個主成分
+cumsum(percentVariance)</code></pre>
+<pre><code>##  [1]  20.01006  34.43474  44.81657  54.43423  60.45336  65.47748  69.38690
+##  [8]  72.84707  75.90060  78.78962  81.40884  83.86288  86.03724  88.09715
+## [15]  89.93909  91.72041  93.41757  94.91522  96.31958  97.69233  98.89356
+## [22] 100.00000 100.00000</code></pre>
+<pre class="r"><code>plot(cumsum(percentVariance))</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>#讀取分類(級)表格
+library(xlsx)
+rank &lt;- read.xlsx(&quot;~/HMD/data-20180426/Table_v2.xlsx&quot;, encoding=&quot;UTF-8&quot;, startRow=1, endRow=24, sheetIndex=2)
+rankClass &lt;- rank$New
+length(rankClass) #23</code></pre>
+<pre><code>## [1] 23</code></pre>
+<pre class="r"><code>panelRange &lt;- extendrange(PCA$x[, 1:3])
+splom(as.data.frame(PCA$x[, 1:3]), # Scatter Plot Matrices in {lattice}
+      groups = rankClass,
+      type = c(&quot;p&quot;,&quot;r&quot;), #r是多加迴歸線
+      as.table = TRUE,
+      auto.key = list(columns = 2),
+      prepanel.limits = function(x) panelRange)</code></pre>
+<p><img src="data:image/png;base64,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" /><!-- --></p>
+<pre class="r"><code>#根據前十個pca去做kmeans
+pca &lt;- transformed[,1:10]
+pc_kmeans &lt;- kmeans(pca,3)
+all_rank$pc_kmeans &lt;- as.factor(pc_kmeans$cluster)
+table(pc_kmeans$cluster,all_rank$New)</code></pre>
+<pre><code>##    
+##     A B C
+##   1 3 2 3
+##   2 0 1 2
+##   3 4 4 4</code></pre>
+<pre class="r"><code>table(pc_kmeans$cluster,all_rank$cluster_3)</code></pre>
+<pre><code>##    
+##     1 2 3
+##   1 0 0 8
+##   2 0 3 0
+##   3 8 0 4</code></pre>
+</div>
 </div>
 </div>
 

@@ -25,5 +25,6 @@ After exploring the IPQC data, the second part of this study combines different 
 - Writing language: R
 - HMD.Rmd: The original markdown in R
 - HMD.md: Easy to see the code and outcome
+- Analysis process.jpg: The outline graph of the whole analysis process. 
 # Summary
 For the first part, evaluation results from Receiver Operating Characteristic Curve (ROC) show that the decision tree and random forest after SMOTE have better performance than the counterpart of ROSE model.The results for the second part show that performance of more than three groups degrades significantly regardless of the cluster methods.

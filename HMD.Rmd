@@ -687,6 +687,8 @@ cumsum(percentVariance)
 plot(cumsum(percentVariance))
 ```
 
+
+
 ```{r}
 #讀取分類(級)表格
 library(xlsx)
